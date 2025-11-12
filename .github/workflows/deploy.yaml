@@ -7,6 +7,17 @@ on:
     branches:
       - "**"
 jobs:
+  format-client:
+    name: Check format (client)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node
+      - name: Install dependencies
+        run: npm --prefix ./client ci
+      - name: Run format check
+        run: npm --prefix ./client run format:check
+
   test-client:
     name: Run tests (client)
     runs-on: ubuntu-24.04
