@@ -1,10 +1,8 @@
-import { Text, View } from 'react-native';
-
-import stylesMain from './src/styles/stylesMain';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen';
+import React from 'react';
 import { createStaticNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import HomeScreen from './src/screens/HomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
 
 const RootStack = createNativeStackNavigator({
   screens: {

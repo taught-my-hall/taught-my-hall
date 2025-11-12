@@ -1,8 +1,9 @@
-import stylesMain from '../styles/stylesMain';
-import { Button, Text, View } from 'react-native';
+import React from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { Button, Text, View } from 'react-native';
+import stylesMain from '../styles/stylesMain';
 
-export default () => {
+export default function HomeScreen() {
   const navigation = useNavigation();
 
   return (
@@ -11,4 +12,4 @@ export default () => {
       <Button title="Login" onPress={() => navigation.navigate('Login')} />
     </View>
   );
-};
+}
