@@ -1,0 +1,19 @@
+name: Deploy application
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "**"
+jobs:
+  test-client:
+    name: Run tests (client)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node
+      - name: Install dependencies
+        run: npm --prefix ./client ci
+      - name: Run tests
+        run: npm --prefix ./client test
