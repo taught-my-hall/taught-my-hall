@@ -1,3 +1,13 @@
+# Formatting
+
+To format the code run
+
+```
+npm run format
+```
+
+GitHub CI checks for proper formatting so not doing this will result in failing pipeline and not being able to merge changes to `main` branch.
+
 # Testing
 
 Tests are implemented using `Jest` library. To run them use:
