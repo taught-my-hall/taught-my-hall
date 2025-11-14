@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const styles = StyleSheet.create({
   container: {
@@ -52,11 +53,12 @@ const styles = StyleSheet.create({
 });
 
 export default function LoginScreen() {
+  const navigation = useNavigation();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // TODO
+    navigation.navigate('Backrooms');
   };
 
   return (
