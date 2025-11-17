@@ -25,7 +25,7 @@ export default function HomeScreen() {
   return (
     <View style={stylesMain.container}>
       <Text style={stylesMain.text}>Home screen</Text>
-	  
+
       {loading && <Text style={stylesMain.text}>Loading...</Text>}
 
       {!loading &&
@@ -34,7 +34,7 @@ export default function HomeScreen() {
             {room.name}
           </Text>
         ))}
-	  
+
       <Button title="Login" onPress={() => navigation.navigate('Login')} />
     </View>
   );
