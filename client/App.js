@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import BackroomScreen from './src/screens/BackroomScreen';
+import RoomScreen from './src/screens/RoomScreen';
 
 const RootStack = createNativeStackNavigator({
   screens: {
@@ -16,6 +17,9 @@ const RootStack = createNativeStackNavigator({
     },
     Backrooms: {
       screen: BackroomScreen,
+    },
+    Room: {
+      screen: RoomScreen,
     },
   },
 });
