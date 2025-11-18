@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Svg from 'react-native-svg';
 import BackroomLines from '../components/BackroomLines.js';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 const svgWidth = width * 3;
@@ -48,6 +49,7 @@ const styles = StyleSheet.create({
 });
 
 export default function BackroomScreen() {
+  const navigation = useNavigation();
   const [rooms, setRooms] = useState([
     { title: 'Create new room' },
     { title: 'Room 1' },
@@ -90,25 +92,36 @@ export default function BackroomScreen() {
     animateMove(1);
   };
 
+  const handleRoomEnter = () => {
+    navigation.navigate('Room');
+  };
+
   return (
     <View style={styles.container}>
       <Animated.View
         style={[styles.svgBox, { transform: [{ translateX: offset }] }]}
       >
-        <Svg width={svgWidth} height={height} fill={'#FF0000'}>
+        <View style={{ width: svgWidth, height: height }}>
           {pointedRooms.map((p, i) => {
             if (p < 0 || p >= rooms.length) return null;
             return (
-              <BackroomLines
+              <View
                 key={i}
-                i={i}
-                p={p}
-                total={rooms.length}
-                title={rooms[p].title}
-              />
+                style={StyleSheet.absoluteFill}
+                pointerEvents="box-none"
+              >
+                <BackroomLines
+                  onPress={handleRoomEnter}
+                  i={i}
+                  p={p}
+                  total={rooms.length}
+                  title={rooms[p].title}
+                  svgWidth={svgWidth} // <--- Pass this prop!
+                />
+              </View>
             );
           })}
-        </Svg>
+        </View>
       </Animated.View>
       {pointerBefore !== 0 && (
         <Pressable style={[styles.button, { left: 0 }]} onPress={roomLeft}>
