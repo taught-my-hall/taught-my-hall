@@ -5,4 +5,5 @@ urlpatterns = [
     path('hello/', views.hello),
     path('foobar/', views.foobar),
     path('rooms/', views.rooms_list),
+    path('rooms/<int:room_id>/', views.room_detail),
 ]

@@ -22,7 +22,7 @@ On Mac/Linux:
 source venv/bin/activate
 
 4. Install all required dependencies:
-pip install django psycopg2-binary python-dotenv djangorestframework
+pip install django psycopg2-binary python-dotenv djangorestframework django-cors-headers
 
 5. Set up the environment variables
 Create a file named .env in the server directory based on .env.example
