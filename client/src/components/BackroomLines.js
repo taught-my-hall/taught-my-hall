@@ -20,11 +20,17 @@ const doorHeight = 0.4;
 const floorColor = '#403524ff';
 
 export default function BackroomLines({
+  // eslint-disable-next-line
   i,
+  // eslint-disable-next-line
   p,
+  // eslint-disable-next-line
   total,
+  // eslint-disable-next-line
   title,
+  // eslint-disable-next-line
   onPress,
+  // eslint-disable-next-line
   svgWidth,
 }) {
   const isFirst = p === 0;
