@@ -1,9 +1,8 @@
-import React from 'react';
 import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import BackroomScreen from './src/screens/BackroomScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
-import BackroomScreen from './src/screens/BackroomScreen';
 import RoomScreen from './src/screens/RoomScreen';
 
 const RootStack = createNativeStackNavigator({

@@ -9,7 +9,9 @@
     "web": "expo start --web",
     "test": "jest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .js,.jsx",
+    "lint:fix": "eslint . --ext .js,.jsx --fix"
   },
   "dependencies": {
     "@react-navigation/native": "^7.1.19",
@@ -38,6 +40,7 @@
     "eslint-plugin-react-native": "^5.0.0",
     "globals": "^16.5.0",
     "jest": "^30.2.0",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "prettier-plugin-organize-imports": "^4.3.0"
   }
 }

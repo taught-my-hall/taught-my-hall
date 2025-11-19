@@ -1,17 +1,14 @@
-import React, { useState, useRef, use } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useRef, useState } from 'react';
 import {
-  Button,
+  Animated,
+  Dimensions,
+  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
-  Animated,
-  Pressable,
-  Dimensions,
 } from 'react-native';
-import Svg from 'react-native-svg';
 import BackroomLines from '../components/BackroomLines.js';
-import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 const svgWidth = width * 3;

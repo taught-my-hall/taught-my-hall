@@ -1,13 +1,12 @@
-import React from 'react';
 // 1. Import StyleSheet and Platform
 import {
   Dimensions,
-  View,
-  Pressable,
   Platform,
+  Pressable,
   StyleSheet,
+  View,
 } from 'react-native';
-import { Line, Text as SvgText, Polygon, Circle, Svg } from 'react-native-svg';
+import { Circle, Line, Polygon, Svg, Text as SvgText } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,11 +20,17 @@ const doorHeight = 0.4;
 const floorColor = '#403524ff';
 
 export default function BackroomLines({
+  // eslint-disable-next-line
   i,
+  // eslint-disable-next-line
   p,
+  // eslint-disable-next-line
   total,
+  // eslint-disable-next-line
   title,
+  // eslint-disable-next-line
   onPress,
+  // eslint-disable-next-line
   svgWidth,
 }) {
   const isFirst = p === 0;
