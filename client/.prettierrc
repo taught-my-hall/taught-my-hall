@@ -6,5 +6,6 @@
   "useTabs": false,
   "printWidth": 80,
   "arrowParens": "avoid",
-  "endOfLine": "auto"
+  "endOfLine": "auto",
+  "plugins": ["prettier-plugin-organize-imports"]
 }

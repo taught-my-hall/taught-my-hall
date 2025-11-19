@@ -1,13 +1,12 @@
-import React from 'react';
 // 1. Import StyleSheet and Platform
 import {
   Dimensions,
-  View,
-  Pressable,
   Platform,
+  Pressable,
   StyleSheet,
+  View,
 } from 'react-native';
-import { Line, Text as SvgText, Polygon, Circle, Svg } from 'react-native-svg';
+import { Circle, Line, Polygon, Svg, Text as SvgText } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
