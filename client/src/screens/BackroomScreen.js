@@ -90,7 +90,10 @@ export default function BackroomScreen() {
   };
 
   const handleRoomEnter = () => {
-    navigation.navigate('Room');
+    // TODO: navigate back to RoomScreen after implementing it
+    // Then from RoomScreen navigate to FurnitureScreen
+    // navigation.navigate('Room');
+    navigation.navigate('Furniture');
   };
 
   return (
