@@ -1,4 +1,13 @@
-import { Platform, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
+import { Layer, Stage } from 'react-konva';
+import {
+  Dimensions,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   Gesture,
   GestureDetector,
@@ -8,9 +17,14 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
+import Furniture from '../components/Furniture';
+import TexturePolygon from '../components/TexturedPolygon';
+
+const { width, height } = Dimensions.get('window');
 
 export default function RoomScreen() {
-  // --- SHARED VALUES ---
+  const navigation = useNavigation();
+
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -41,7 +55,6 @@ export default function RoomScreen() {
 
   const composedGestures = Gesture.Simultaneous(panGesture, pinchGesture);
 
-  // --- WHEEL HANDLER (WEB) ---
   const handleWheel = e => {
     if (Platform.OS !== 'web') return;
 
@@ -65,6 +78,21 @@ export default function RoomScreen() {
     };
   });
 
+  const [svgReload, setSvgReload] = useState(0);
+
+  const furnitures = [
+    [null, null, null, 'chair_back', null],
+    [null, null, 'chair_left', 'table', 'chair_right'],
+    [null, 'chair_back', null, 'chair_front', null],
+    ['chair_left', 'table', 'chair_right', null, null],
+    [null, 'chair_front', null, null, null],
+  ];
+
+  const furnitureClick = (row, col) => {
+    console.log(`Furniture clicked at row ${row} | col ${col}`);
+    navigation.navigate('Furniture');
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={composedGestures}>
@@ -73,7 +101,58 @@ export default function RoomScreen() {
           {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
         >
           <Animated.View style={[style.rectangle, animatedStyle]}>
-            {/* Room Content */}
+            <Stage width={1000} height={1400}>
+              <Layer>
+                <TexturePolygon
+                  points={[
+                    [0, 0],
+                    [1000, 0],
+                    [1000, 400],
+                    [0, 400],
+                  ]}
+                  textureId={'brick1'}
+                ></TexturePolygon>
+                <TexturePolygon
+                  points={[
+                    [0, 400],
+                    [1000, 400],
+                    [1000, 1400],
+                    [0, 1400],
+                  ]}
+                  textureId={'planks1'}
+                ></TexturePolygon>
+                {furnitures.map((row, i) =>
+                  row.map((item, j) => {
+                    if (item === null) return null;
+                    return (
+                      <Furniture
+                        modelname={item}
+                        offset={[200 * j, 400 + 200 * i]}
+                        width={200}
+                        height={200}
+                      ></Furniture>
+                    );
+                  })
+                )}
+              </Layer>
+            </Stage>
+            <View style={StyleSheet.absoluteFill}>
+              {furnitures.map((row, i) =>
+                row.map((item, j) => {
+                  if (item === null) return null;
+                  return (
+                    <TouchableOpacity
+                      key={`click-${i}-${j}`}
+                      style={[
+                        style.roomSectorClick,
+                        { left: 10 + 200 * j, top: 400 + 10 + 200 * i },
+                      ]}
+                      onPress={() => furnitureClick(i, j)}
+                    />
+                  );
+                })
+              )}
+            </View>
           </Animated.View>
         </Animated.View>
       </GestureDetector>
@@ -88,13 +167,24 @@ const style = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    width: '100%', // Ensure it takes full width
-    height: '100%', // Ensure it takes full height
+    width: '100%',
+    height: '100%',
   },
   rectangle: {
-    width: 200,
-    height: 200,
+    height: 1000,
+    aspectRatio: 1 / 1,
     backgroundColor: '#4a90e2',
     borderRadius: 10,
+  },
+  roomSectorClick: {
+    position: 'absolute',
+    height: 190,
+    width: 190,
+    borderWidth: 2,
+    borderColor: '#00000037',
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
 });

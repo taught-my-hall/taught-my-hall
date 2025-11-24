@@ -93,7 +93,7 @@ export default function BackroomScreen() {
     // TODO: navigate back to RoomScreen after implementing it
     // Then from RoomScreen navigate to FurnitureScreen
     // navigation.navigate('Room');
-    navigation.navigate('Furniture');
+    navigation.navigate('Room');
   };
 
   return (
