@@ -126,6 +126,7 @@ export default function RoomScreen() {
                     if (item === null) return null;
                     return (
                       <Furniture
+                        key={`furniture-${i}-${j}`}
                         modelname={item}
                         offset={[200 * j, 400 + 200 * i]}
                         width={200}

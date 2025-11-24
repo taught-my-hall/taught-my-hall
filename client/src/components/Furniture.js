@@ -2,7 +2,12 @@ import { Group } from 'react-konva';
 import models from '../utils/furnitureModels';
 import TexturePolygon from './TexturedPolygon';
 
-export default function Furniture({ modelname, offset = [0, 0] }) {
+export default function Furniture({
+  // eslint-disable-next-line
+  modelname,
+  // eslint-disable-next-line
+  offset = [0, 0],
+}) {
   const [offsetX, offsetY] = offset;
 
   return (
