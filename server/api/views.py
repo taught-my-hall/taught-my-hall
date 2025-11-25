@@ -51,3 +51,23 @@ def room_detail(request, room_id):
     if request.method == "DELETE":
         room.delete()
         return JsonResponse({"status": "deleted"})
+
+def room_furniture(request, room_id):
+    """
+    GET = return list of furniture from room
+    """
+    try:
+        room = Room.objects.get(id=room_id)
+    except Room.DoesNotExist:
+        return JsonResponse({"error": "Room not found"}, status=404)
+
+    furniture = room.furniture.all()
+    data = []
+    for object in furniture:
+        data.append({
+            "id": object.id,
+            "iconUrl": None,
+            "name": object.name
+        })
+
+    return JsonResponse(data, safe=False)
