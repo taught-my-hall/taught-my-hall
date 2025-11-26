@@ -4,7 +4,9 @@ import { Layer, Stage } from 'react-konva';
 import {
   Dimensions,
   Platform,
+  Pressable,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -157,6 +159,14 @@ export default function RoomScreen() {
           </Animated.View>
         </Animated.View>
       </GestureDetector>
+      <Pressable
+        onPress={() => navigation.navigate('Review')}
+        style={style.reviewButton}
+      >
+        <View>
+          <Text style={{ fontSize: 24, color: '#FFF' }}>Review</Text>
+        </View>
+      </Pressable>
     </GestureHandlerRootView>
   );
 }
@@ -173,7 +183,7 @@ const style = StyleSheet.create({
   },
   rectangle: {
     height: 1000,
-    aspectRatio: 1 / 1,
+    aspectRatio: 1,
     backgroundColor: '#4a90e2',
     borderRadius: 10,
   },
@@ -187,5 +197,18 @@ const style = StyleSheet.create({
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+  },
+  reviewButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 50,
+    width: 200,
+    height: 70,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+    borderColor: '#FFF',
+    borderWidth: 2,
   },
 });
