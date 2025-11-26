@@ -1,7 +1,7 @@
 import { Check, Loader2 } from 'lucide-react';
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-
-const StyleSheet = { create: styles => styles };
+import { StyleSheet } from 'react-native';
 
 const View = ({ style, children, ...props }) => (
   <div
@@ -18,6 +18,11 @@ const View = ({ style, children, ...props }) => (
   </div>
 );
 
+View.propTypes = {
+  style: PropTypes.object,
+  children: PropTypes.node,
+};
+
 const Text = ({ style, children, ...props }) => (
   <span
     style={{ display: 'block', boxSizing: 'border-box', ...style }}
@@ -26,6 +31,11 @@ const Text = ({ style, children, ...props }) => (
     {children}
   </span>
 );
+
+Text.propTypes = {
+  style: PropTypes.object,
+  children: PropTypes.node,
+};
 
 const TextInput = ({ style, value, onChangeText, placeholder, ...props }) => (
   <input
@@ -42,6 +52,13 @@ const TextInput = ({ style, value, onChangeText, placeholder, ...props }) => (
     {...props}
   />
 );
+
+TextInput.propTypes = {
+  style: PropTypes.object,
+  value: PropTypes.string,
+  onChangeText: PropTypes.func,
+  placeholder: PropTypes.string,
+};
 
 const TouchableOpacity = ({ style, onPress, children, disabled }) => (
   <button
@@ -62,6 +79,13 @@ const TouchableOpacity = ({ style, onPress, children, disabled }) => (
     {children}
   </button>
 );
+
+TouchableOpacity.propTypes = {
+  style: PropTypes.object,
+  onPress: PropTypes.func,
+  children: PropTypes.node,
+  disabled: PropTypes.bool,
+};
 
 const ScrollView = ({ style, contentContainerStyle, children }) => (
   <div
@@ -84,6 +108,12 @@ const ScrollView = ({ style, contentContainerStyle, children }) => (
     </div>
   </div>
 );
+
+ScrollView.propTypes = {
+  style: PropTypes.object,
+  contentContainerStyle: PropTypes.object,
+  children: PropTypes.node,
+};
 
 // --- DATA SOURCE ---
 const fakeFetch = async () => {
@@ -221,7 +251,10 @@ export default function ReviewScreen() {
       >
         {questions.map((q, index) => {
           const isGlobalSubmitted = results !== null;
-          const isIndividuallyChecked = Object.prototype.hasOwnProperty.call(checkedItems, q.id)
+          const isIndividuallyChecked = Object.prototype.hasOwnProperty.call(
+            checkedItems,
+            q.id
+          );
           const isSubmitted = isGlobalSubmitted || isIndividuallyChecked;
 
           let isCorrect = null;
