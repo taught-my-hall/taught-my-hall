@@ -221,7 +221,7 @@ export default function ReviewScreen() {
       >
         {questions.map((q, index) => {
           const isGlobalSubmitted = results !== null;
-          const isIndividuallyChecked = checkedItems.hasOwnProperty(q.id);
+          const isIndividuallyChecked = Object.prototype.hasOwnProperty.call(checkedItems, q.id)
           const isSubmitted = isGlobalSubmitted || isIndividuallyChecked;
 
           let isCorrect = null;
