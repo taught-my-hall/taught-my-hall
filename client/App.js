@@ -4,6 +4,7 @@ import BackroomScreen from './src/screens/BackroomScreen';
 import FurnitureScreen from './src/screens/FurnitureScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import ReviewScreen from './src/screens/ReviewScreen';
 import RoomScreen from './src/screens/RoomScreen';
 
 const RootStack = createNativeStackNavigator({
@@ -23,6 +24,9 @@ const RootStack = createNativeStackNavigator({
     },
     Furniture: {
       screen: FurnitureScreen,
+    },
+    Review: {
+      screen: ReviewScreen,
     },
   },
 });
