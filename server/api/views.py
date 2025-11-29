@@ -89,7 +89,15 @@ def furniture_list(request):
                 "roomId": f.room.id,
                 "name": f.name,
                 "description": f.description,
-                "question": f.questions
+                "flashcards": [
+                    {
+                        "id": fc.get("id"),
+                        "front": fc.get("front"),
+                        "back": fc.get("back"),
+                    }
+                    for fc in f.flashcards
+                ],
+
             })
         return JsonResponse(data, safe=False)
 
@@ -104,14 +112,21 @@ def furniture_list(request):
             room = room,
             name = body["name"],
             description = body.get("description", ""),
-            questions = body.get("question", []),
+            flashcards = body.get("flashcards", [])
         )
         return JsonResponse({
             "id": furniture.id,
             "roomId": furniture.room.id,
             "name": furniture.name,
             "description": furniture.description,
-            "question": furniture.questions,
+            "flashcards": [
+                {
+                    "id": fc.get("id"),
+                    "front": fc.get("front"),
+                    "back": fc.get("back"),
+                }
+                for fc in furniture.flashcards
+            ],
         }, status=201)
 
 @csrf_exempt
@@ -132,14 +147,22 @@ def furniture_detail(request, furniture_id):
             "roomId": furniture.room.id,
             "name": furniture.name,
             "description": furniture.description,
-            "question": furniture.questions
+            "flashcards": [
+                {
+                    "id": fc.get("id"),
+                    "front": fc.get("front"),
+                    "back": fc.get("back"),
+                }
+                for fc in furniture.flashcards
+            ],
+
         })
 
     if request.method == "PUT":
         body = json.loads(request.body)
         furniture.name = body.get("name", furniture.name)
         furniture.description = body.get("description", furniture.description)
-        furniture.question = body.get("question", furniture.questions)
+        furniture.flashcards = body.get("flashcards", furniture.flashcards)
 
         if "roomId" in body:
             try:
@@ -154,7 +177,14 @@ def furniture_detail(request, furniture_id):
             "roomId": furniture.room.id,
             "name": furniture.name,
             "description": furniture.description,
-            "question": furniture.questions
+            "flashcards": [
+                {
+                    "id": fc.get("id"),
+                    "front": fc.get("front"),
+                    "back": fc.get("back"),
+                }
+                for fc in furniture.flashcards
+            ],
         })
 
     if request.method == "DELETE":

@@ -1,0 +1,85 @@
+from django.core.management.base import BaseCommand
+from django.contrib.auth.models import User
+from api.models import Room, Furniture
+
+
+class Command(BaseCommand):
+    help = "Create initial room with flashcards data"
+
+    def handle(self, *args, **kwargs):
+        self.stdout.write("Seeding room + flashcards...")
+
+        user, _ = User.objects.get_or_create(username="demo")
+
+        room, _ = Room.objects.get_or_create(
+            user=user,
+            name="First Learning Room"
+        )
+
+        raw_flashcards = [
+            ("What is soybean inoculation?",
+             "Applying beneficial rhizobia bacteria to soybean seeds before planting."),
+            ("Which bacteria is primarily used in soybean inoculants?",
+             "Bradyrhizobium japonicum."),
+            ("What is the main purpose of soybean inoculation?",
+             "To enhance nitrogen fixation and improve plant growth."),
+            ("Do soybeans naturally contain nitrogen-fixing bacteria in all soils?",
+             "No, many soils lack effective Bradyrhizobium strains."),
+            ("When should soybeans be inoculated?",
+             "Shortly before sowing."),
+            ("What environmental factor negatively affects inoculant bacteria?",
+             "High temperatures and direct sunlight."),
+            ("What is the optimal soil pH for effective nodulation?",
+             "Around 6.0–6.8."),
+            ("What is a nodule on a soybean root?",
+             "A structure formed by rhizobia where nitrogen fixation occurs."),
+            ("What color indicates an active nitrogen-fixing nodule?",
+             "Pink or reddish inside."),
+            ("What happens if nodules are white or greenish?",
+             "They are inactive and not fixing nitrogen."),
+            ("How deep should soybean seeds be planted?",
+             "Typically 3–5 cm."),
+            ("Should you inoculate soybeans in fields with a long history of cultivation?",
+             "Often yes, to maintain strong rhizobia populations."),
+            ("What reduces the effectiveness of inoculant bacteria on seeds?",
+             "Sunlight, heat, and planting delays."),
+            ("What increases nodulation in soybeans?",
+             "Proper inoculation with effective rhizobia strains."),
+            ("Should inoculated seeds be mixed with fertilizers?",
+             "No, fertilizers may harm rhizobia."),
+            ("Can rhizobia survive long on dry seed?",
+             "They survive poorly; plant soon after inoculation."),
+            ("What macronutrient do rhizobia supply?",
+             "Nitrogen."),
+            ("What type of nitrogen do rhizobia fix?",
+             "Atmospheric nitrogen into plant-usable forms."),
+            ("What soil condition can limit nodulation?",
+             "Compacted or waterlogged soils."),
+            ("Why is soybean inoculation cost-effective?",
+             "It reduces the need for synthetic nitrogen fertilizers."),
+        ]
+
+        flashcards = [
+            {
+                "id": i + 1,
+                "front": front,
+                "back": back
+            }
+            for i, (front, back) in enumerate(raw_flashcards)
+        ]
+
+        furniture, created = Furniture.objects.get_or_create(
+            room=room,
+            name="Soybean Inoculation Basics",
+            defaults={
+                "description": "20 flashcards about soybean inoculation",
+                "flashcards": flashcards,
+            }
+        )
+
+        if not created:
+            furniture.flashcards = flashcards
+            furniture.description = "20 flashcards about soybean inoculation"
+            furniture.save()
+
+        self.stdout.write(self.style.SUCCESS("Seeding completed."))
