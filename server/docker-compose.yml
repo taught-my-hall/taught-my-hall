@@ -5,9 +5,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_pass
-      POSTGRES_DB: memory_palace_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -22,6 +22,7 @@ services:
     build: .
     command: >
       sh -c "python manage.py migrate &&
+             python manage.py seed_first_room &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
