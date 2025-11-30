@@ -1,5 +1,4 @@
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
   Dimensions,
@@ -49,40 +48,60 @@ export default function RoomScreen() {
 
   // --- GESTURES (TOUCH) ---
   const panGesture = Gesture.Pan()
-      .minDistance(3)
-      .averageTouches(true)
-      .onUpdate((e) => {
-        const rawX = savedTranslateX.value + e.translationX;
-        const rawY = savedTranslateY.value + e.translationY;
+    .minDistance(3)
+    .averageTouches(true)
+    .onUpdate(e => {
+      const rawX = savedTranslateX.value + e.translationX;
+      const rawY = savedTranslateY.value + e.translationY;
 
-        translateX.value = clampValues(rawX, scale.value, ROOM_WIDTH, SCREEN_WIDTH);
-        translateY.value = clampValues(rawY, scale.value, ROOM_HEIGHT, SCREEN_HEIGHT);
-      })
-      .onEnd(() => {
-        savedTranslateX.value = translateX.value;
-        savedTranslateY.value = translateY.value;
-      });
+      translateX.value = clampValues(
+        rawX,
+        scale.value,
+        ROOM_WIDTH,
+        SCREEN_WIDTH
+      );
+      translateY.value = clampValues(
+        rawY,
+        scale.value,
+        ROOM_HEIGHT,
+        SCREEN_HEIGHT
+      );
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
 
   const pinchGesture = Gesture.Pinch()
-      .onUpdate((e) => {
-        const rawScale = savedScale.value * e.scale;
-        const newScale = Math.min(Math.max(rawScale, 0.5), 4);
+    .onUpdate(e => {
+      const rawScale = savedScale.value * e.scale;
+      const newScale = Math.min(Math.max(rawScale, 0.5), 4);
 
-        scale.value = newScale;
+      scale.value = newScale;
 
-        translateX.value = clampValues(translateX.value, newScale, ROOM_WIDTH, SCREEN_WIDTH);
-        translateY.value = clampValues(translateY.value, newScale, ROOM_HEIGHT, SCREEN_HEIGHT);
-      })
-      .onEnd(() => {
-        savedScale.value = scale.value;
-        savedTranslateX.value = translateX.value;
-        savedTranslateY.value = translateY.value;
-      });
+      translateX.value = clampValues(
+        translateX.value,
+        newScale,
+        ROOM_WIDTH,
+        SCREEN_WIDTH
+      );
+      translateY.value = clampValues(
+        translateY.value,
+        newScale,
+        ROOM_HEIGHT,
+        SCREEN_HEIGHT
+      );
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
 
   const composedGestures = Gesture.Simultaneous(panGesture, pinchGesture);
 
   // --- MOUSE WHEEL (ZOOM TO CURSOR) ---
-  const handleWheel = (e) => {
+  const handleWheel = e => {
     if (Platform.OS !== 'web') return;
 
     const scrollAmount = e.deltaY;
@@ -108,8 +127,18 @@ export default function RoomScreen() {
     savedScale.value = newScale;
 
     // Apply Clamping
-    translateX.value = clampValues(newTranslateX, newScale, ROOM_WIDTH, SCREEN_WIDTH);
-    translateY.value = clampValues(newTranslateY, newScale, ROOM_HEIGHT, SCREEN_HEIGHT);
+    translateX.value = clampValues(
+      newTranslateX,
+      newScale,
+      ROOM_WIDTH,
+      SCREEN_WIDTH
+    );
+    translateY.value = clampValues(
+      newTranslateY,
+      newScale,
+      ROOM_HEIGHT,
+      SCREEN_HEIGHT
+    );
 
     savedTranslateX.value = translateX.value;
     savedTranslateY.value = translateY.value;
@@ -137,67 +166,77 @@ export default function RoomScreen() {
   };
 
   return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <GestureDetector gesture={composedGestures}>
-          <Animated.View
-              style={style.container}
-              {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
-          >
-            <Animated.View style={[style.roomContent, animatedStyle]}>
-              <Stage width={ROOM_WIDTH} height={ROOM_HEIGHT}>
-                <Layer>
-                  <TexturePolygon
-                      points={[[0, 0], [1000, 0], [1000, 400], [0, 400]]}
-                      textureId={'brick1'}
-                  />
-                  <TexturePolygon
-                      points={[[0, 400], [1000, 400], [1000, 1400], [0, 1400]]}
-                      textureId={'planks1'}
-                  />
-                  {furnitures.map((row, i) =>
-                      row.map((item, j) => {
-                        if (!item) return null;
-                        return (
-                            <Furniture
-                                key={`furniture-${i}-${j}`}
-                                modelname={item}
-                                offset={[200 * j, 400 + 200 * i]}
-                                width={200}
-                                height={200}
-                            />
-                        );
-                      })
-                  )}
-                </Layer>
-              </Stage>
-              <View style={StyleSheet.absoluteFill}>
-                {furnitures.map((row, i) =>
-                    row.map((item, j) => {
-                      if (!item) return null;
-                      return (
-                          <TouchableOpacity
-                              key={`click-${i}-${j}`}
-                              style={[
-                                style.roomSectorClick,
-                                { left: 10 + 200 * j, top: 400 + 10 + 200 * i },
-                              ]}
-                              onPress={() => furnitureClick(i, j)}
-                          />
-                      );
-                    })
-                )}
-              </View>
-            </Animated.View>
-          </Animated.View>
-        </GestureDetector>
-
-        <Pressable
-            onPress={() => navigation.navigate('Review')}
-            style={style.reviewButton}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureDetector gesture={composedGestures}>
+        <Animated.View
+          style={style.container}
+          {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
         >
-          <Text style={{ fontSize: 24, color: '#FFF' }}>Review</Text>
-        </Pressable>
-      </GestureHandlerRootView>
+          <Animated.View style={[style.roomContent, animatedStyle]}>
+            <Stage width={ROOM_WIDTH} height={ROOM_HEIGHT}>
+              <Layer>
+                <TexturePolygon
+                  points={[
+                    [0, 0],
+                    [1000, 0],
+                    [1000, 400],
+                    [0, 400],
+                  ]}
+                  textureId={'brick1'}
+                />
+                <TexturePolygon
+                  points={[
+                    [0, 400],
+                    [1000, 400],
+                    [1000, 1400],
+                    [0, 1400],
+                  ]}
+                  textureId={'planks1'}
+                />
+                {furnitures.map((row, i) =>
+                  row.map((item, j) => {
+                    if (!item) return null;
+                    return (
+                      <Furniture
+                        key={`furniture-${i}-${j}`}
+                        modelname={item}
+                        offset={[200 * j, 400 + 200 * i]}
+                        width={200}
+                        height={200}
+                      />
+                    );
+                  })
+                )}
+              </Layer>
+            </Stage>
+            <View style={StyleSheet.absoluteFill}>
+              {furnitures.map((row, i) =>
+                row.map((item, j) => {
+                  if (!item) return null;
+                  return (
+                    <TouchableOpacity
+                      key={`click-${i}-${j}`}
+                      style={[
+                        style.roomSectorClick,
+                        { left: 10 + 200 * j, top: 400 + 10 + 200 * i },
+                      ]}
+                      onPress={() => furnitureClick(i, j)}
+                    />
+                  );
+                })
+              )}
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </GestureDetector>
+
+      <Pressable
+        onPress={() => navigation.navigate('Review')}
+        style={style.reviewButton}
+      >
+        <Text style={{ fontSize: 24, color: '#FFF' }}>Review</Text>
+      </Pressable>
+    </GestureHandlerRootView>
   );
 }
 
