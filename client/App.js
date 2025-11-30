@@ -22,9 +22,6 @@ const RootStack = createNativeStackNavigator({
     Room: {
       screen: RoomScreen,
     },
-    Furniture: {
-      screen: FurnitureScreen,
-    },
     Review: {
       screen: ReviewScreen,
     },

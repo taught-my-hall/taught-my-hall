@@ -138,16 +138,13 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#111',
     flex: 1,
     width: '100%',
   },
   main: {
     maxWidth: 1000,
     padding: 32,
-    backgroundColor: '#222',
     borderRadius: 32,
-    border: '2px solid #333',
   },
   heading: {
     fontSize: 28,
