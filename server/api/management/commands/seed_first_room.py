@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from api.models import Room, Furniture
+from django.utils import timezone
 
 
 class Command(BaseCommand):
@@ -58,12 +59,16 @@ class Command(BaseCommand):
             ("Why is soybean inoculation cost-effective?",
              "It reduces the need for synthetic nitrogen fertilizers."),
         ]
-
+        
         flashcards = [
             {
                 "id": i + 1,
                 "front": front,
-                "back": back
+                "back": back,
+                "interval": 1,      
+                "ease_factor": 2.5,    
+                "repetition": 0,       
+                "next_review": timezone.now().isoformat()  
             }
             for i, (front, back) in enumerate(raw_flashcards)
         ]

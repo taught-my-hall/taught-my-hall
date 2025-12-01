@@ -9,4 +9,6 @@ urlpatterns = [
     path('rooms/<int:room_id>/furniture/', views.room_furniture),
     path('furniture/', views.furniture_list),
     path('furniture/<int:furniture_id>/', views.furniture_detail),
+    path("review/", views.review_flashcard),
+    path("review/queue/", views.review_queue),
 ]
