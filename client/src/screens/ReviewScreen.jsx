@@ -9,7 +9,7 @@ let questionIdCounter = 1;
 // called when less than 5 questions are left in the buffer
 const fetchQuestions = async () => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/furniture/1/");
+    const response = await fetch('http://127.0.0.1:8000/api/furniture/1/');
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -20,12 +20,10 @@ const fetchQuestions = async () => {
     // data.flashcards to tablica fiszek
     return { questions: data.flashcards };
   } catch (error) {
-    console.error("Error fetching flashcards:", error);
+    console.error('Error fetching flashcards:', error);
     return { questions: [] };
   }
 };
-
-
 
 // Simulates telling backend whether user knows or
 // doesn't know the question
