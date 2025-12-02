@@ -1,366 +1,184 @@
-import { Check, Loader2 } from 'lucide-react';
-import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useQueue } from '@uidotdev/usehooks';
+import { Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-const View = ({ style, children, ...props }) => (
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      boxSizing: 'border-box',
-      position: 'relative',
-      ...style,
-    }}
-    {...props}
-  >
-    {children}
-  </div>
-);
+let questionIdCounter = 1;
 
-View.propTypes = {
-  style: PropTypes.object,
-  children: PropTypes.node,
-};
-
-const Text = ({ style, children, ...props }) => (
-  <span
-    style={{ display: 'block', boxSizing: 'border-box', ...style }}
-    {...props}
-  >
-    {children}
-  </span>
-);
-
-Text.propTypes = {
-  style: PropTypes.object,
-  children: PropTypes.node,
-};
-
-const TextInput = ({ style, value, onChangeText, placeholder, ...props }) => (
-  <input
-    style={{
-      outline: 'none',
-      border: 'none',
-      background: 'transparent',
-      boxSizing: 'border-box',
-      ...style,
-    }}
-    value={value}
-    onChange={e => onChangeText(e.target.value)}
-    placeholder={placeholder}
-    {...props}
-  />
-);
-
-TextInput.propTypes = {
-  style: PropTypes.object,
-  value: PropTypes.string,
-  onChangeText: PropTypes.func,
-  placeholder: PropTypes.string,
-};
-
-const TouchableOpacity = ({ style, onPress, children, disabled }) => (
-  <button
-    onClick={onPress}
-    disabled={disabled}
-    style={{
-      border: 'none',
-      background: 'transparent',
-      padding: 0,
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      display: 'flex',
-      flexDirection: 'column',
-      boxSizing: 'border-box',
-      opacity: disabled ? 0.6 : 1,
-      ...style,
-    }}
-  >
-    {children}
-  </button>
-);
-
-TouchableOpacity.propTypes = {
-  style: PropTypes.object,
-  onPress: PropTypes.func,
-  children: PropTypes.node,
-  disabled: PropTypes.bool,
-};
-
-const ScrollView = ({ style, contentContainerStyle, children }) => (
-  <div
-    style={{
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      flex: 1,
-      ...style,
-    }}
-  >
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        ...contentContainerStyle,
-      }}
-    >
-      {children}
-    </div>
-  </div>
-);
-
-ScrollView.propTypes = {
-  style: PropTypes.object,
-  contentContainerStyle: PropTypes.object,
-  children: PropTypes.node,
-};
-
-// --- DATA SOURCE ---
+// Simulates fetching new questions. Should be
+// called when less than 5 questions are left in the buffer
 const fakeFetch = async () => {
   return new Promise(resolve => {
-    setTimeout(
-      () =>
-        resolve({
-          questions: [
-            { id: 1, front: 'What is the capital of France?', back: 'Paris' },
-            { id: 2, front: 'What is 2 + 2?', back: '4' },
-            { id: 3, front: 'What is the largest planet?', back: 'Jupiter' },
-            {
-              id: 4,
-              front: 'Who wrote Romeo and Juliet?',
-              back: 'William Shakespeare',
-            },
-            {
-              id: 5,
-              front: 'What is the chemical symbol for gold?',
-              back: 'Au',
-            },
-            { id: 6, front: 'What year did the Titanic sink?', back: '1912' },
-            {
-              id: 7,
-              front: 'What is the smallest country in the world?',
-              back: 'Vatican City',
-            },
-            { id: 8, front: 'How many continents are there?', back: '7' },
-            {
-              id: 9,
-              front: 'What is the speed of light?',
-              back: '299,792,458 m/s',
-            },
-            {
-              id: 10,
-              front: 'What is the most spoken language by native speakers?',
-              back: 'Mandarin Chinese',
-            },
-          ],
-        }),
-      1500
-    );
+    setTimeout(() => {
+      const questions = Array.from({ length: 10 }, (_, i) => ({
+        id: questionIdCounter++,
+        front: `Question ${questionIdCounter - 1}?`,
+        back: `Answer ${questionIdCounter - 1}`,
+      }));
+      resolve({ questions });
+    }, 1000);
+  });
+};
+
+// Simulates telling backend whether user knows or
+// doesn't know the question
+const fakeValidate = async (questionId, knows) => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log(
+        `Validated question ${questionId}: ${knows ? 'knows' : 'dont know'}`
+      );
+      resolve({ success: true });
+    }, 1000);
   });
 };
 
 export default function ReviewScreen() {
-  const [questions, setQuestions] = useState([]);
-  const [userAnswers, setUserAnswers] = useState({});
-  const [results, setResults] = useState(null); // Global submission state
-  const [checkedItems, setCheckedItems] = useState({}); // Individual check state
-  const [loading, setLoading] = useState(true);
+  const {
+    add: pushQuestion,
+    remove: popQuestion,
+    first: currentQuestion,
+    size: questionsLength,
+  } = useQueue([]);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchMoreQuestions = useCallback(() => {
+    setIsLoading(true);
+    setError('');
+
+    fakeFetch()
+      .then(res => {
+        for (const question of res.questions) {
+          pushQuestion(question);
+        }
+      })
+      .catch(_err => {
+        setError('Something went wrong, please try again');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [pushQuestion]);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const data = await fakeFetch();
-      setQuestions(data.questions);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
+    if (questionsLength < 5) {
+      fetchMoreQuestions();
+    }
+  }, [questionsLength, fetchMoreQuestions]);
 
-  const handleInputChange = (id, text) => {
-    if (results || checkedItems[id]) return; // Prevent editing if submitted or checked
-    setUserAnswers(prev => ({
-      ...prev,
-      [id]: text,
-    }));
+  const handleAnswer = knows => {
+    if (!currentQuestion) return;
+
+    setIsLoading(true);
+    setError('');
+
+    fakeValidate(currentQuestion.id, knows)
+      .then(res => {
+        if (res.success) popQuestion();
+        else throw 1;
+      })
+      .catch(() => {
+        setError('Error while updating question data');
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setShowAnswer(false);
+      });
   };
 
-  const handleCheckSingle = id => {
-    const question = questions.find(q => q.id === id);
-    const userAnswer = userAnswers[id] || '';
-    const isCorrect =
-      userAnswer.trim().toLowerCase() === question.back.trim().toLowerCase();
-
-    setCheckedItems(prev => ({
-      ...prev,
-      [id]: isCorrect,
-    }));
+  const handleRevealAnswer = () => {
+    setShowAnswer(true);
   };
-
-  const checkAnswers = () => {
-    const newResults = {};
-    let score = 0;
-
-    questions.forEach(q => {
-      const userAnswer = userAnswers[q.id] || '';
-      const isCorrect =
-        userAnswer.trim().toLowerCase() === q.back.trim().toLowerCase();
-      newResults[q.id] = isCorrect;
-      if (isCorrect) score++;
-    });
-
-    setResults({ score, details: newResults });
-  };
-
-  const resetQuiz = () => {
-    setResults(null);
-    setCheckedItems({});
-    setUserAnswers({});
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Loader2
-          size={40}
-          color="#3b82f6"
-          style={{ animation: 'spin 1s linear infinite' }}
-        />
-        <Text style={styles.loadingText}>Loading Questions...</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Knowledge Review</Text>
-        {results && (
-          <View style={styles.scoreBadge}>
-            <Text style={styles.scoreText}>
-              Score: {results.score} / {questions.length}
-            </Text>
-          </View>
-        )}
+        <View style={styles.scoreBadge}>
+          <Text style={styles.scoreText}>
+            Remaining: {questionsLength} questions
+          </Text>
+        </View>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {questions.map((q, index) => {
-          const isGlobalSubmitted = results !== null;
-          const isIndividuallyChecked = Object.prototype.hasOwnProperty.call(
-            checkedItems,
-            q.id
-          );
-          const isSubmitted = isGlobalSubmitted || isIndividuallyChecked;
+      {/* Flashcard */}
+      {currentQuestion && (
+        <View style={styles.centerContent}>
+          <View style={styles.flashcard}>
+            <Text style={styles.questionLabel}>Question</Text>
+            <Text style={styles.questionText}>{currentQuestion.front}</Text>
 
-          let isCorrect = null;
-          if (isGlobalSubmitted) {
-            isCorrect = results.details[q.id];
-          } else if (isIndividuallyChecked) {
-            isCorrect = checkedItems[q.id];
-          }
-
-          let cardBorderColor = '#374151'; // Default gray border
-          if (isSubmitted) {
-            cardBorderColor = isCorrect ? '#065f46' : '#7f1d1d';
-          }
-
-          return (
-            <View
-              key={q.id}
-              style={{
-                ...styles.card,
-                borderColor: cardBorderColor,
-                backgroundColor: '#1f2937',
-              }}
-            >
-              <Text style={styles.questionLabel}>Question {index + 1}</Text>
-              <Text style={styles.questionText}>{q.front}</Text>
-
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={{
-                    ...styles.input,
-                    borderColor: isSubmitted
-                      ? isCorrect
-                        ? '#10b981'
-                        : '#ef4444'
-                      : '#4b5563',
-                    color: isSubmitted
-                      ? isCorrect
-                        ? '#d1fae5'
-                        : '#fee2e2'
-                      : '#ffffff',
-                  }}
-                  placeholder="Type your answer..."
-                  placeholderTextColor="#9ca3af"
-                  value={userAnswers[q.id] || ''}
-                  onChangeText={text => handleInputChange(q.id, text)}
-                  editable={!isSubmitted}
-                />
-
-                {/* Individual Check Button or Status Icon */}
-                {isSubmitted ? (
-                  <View style={styles.statusIconContainer}>
-                    <Text
-                      style={{
-                        ...styles.statusIcon,
-                        color: isCorrect ? '#10b981' : '#ef4444',
-                      }}
-                    >
-                      {isCorrect ? '✓' : '✗'}
-                    </Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.checkButton}
-                    onPress={() => handleCheckSingle(q.id)}
-                    disabled={!userAnswers[q.id]}
-                  >
-                    <Check
-                      size={24}
-                      color={userAnswers[q.id] ? '#ffffff' : '#6b7280'}
-                    />
-                  </TouchableOpacity>
-                )}
+            {showAnswer && (
+              <View style={styles.answerSection}>
+                <View style={styles.divider} />
+                <Text style={styles.answerLabel}>Answer</Text>
+                <Text style={styles.answerText}>{currentQuestion.back}</Text>
               </View>
+            )}
+          </View>
+        </View>
+      )}
 
-              {isSubmitted && !isCorrect && (
-                <View style={styles.correctionBox}>
-                  <Text style={styles.correctionLabel}>Correct Answer:</Text>
-                  <Text style={styles.correctionText}>{q.back}</Text>
-                </View>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+      {!isLoading && !error && questionsLength === 0 && (
+        <View style={styles.centerContent}>
+          <Text style={styles.completedText}>🎉 All questions completed!</Text>
+          <Text style={styles.completedSubtext}>
+            Great job reviewing your flashcards.
+          </Text>
+        </View>
+      )}
 
-      {/* Bottom Button Area */}
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <Loader2 size={40} color="#3b82f6" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      )}
+
+      {!!error && (
+        <View style={styles.centerContent}>
+          <Text style={{}}>{error}</Text>
+          <Pressable style={{}} onPress={() => fetchMoreQuestions()}>
+            <Text style={{}}>Download questions again</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Bottom Buttons */}
       <View style={styles.footer}>
-        {!results ? (
-          <TouchableOpacity
-            style={{
-              ...styles.button,
-              backgroundColor:
-                Object.keys(userAnswers).length === 0 ? '#4b5563' : '#2563eb',
-            }}
-            onPress={checkAnswers}
-            disabled={Object.keys(userAnswers).length === 0}
+        {!showAnswer ? (
+          <Pressable
+            style={{ ...styles.button, backgroundColor: '#2563eb' }}
+            onPress={handleRevealAnswer}
           >
-            <Text style={styles.buttonText}>Check All Answers</Text>
-          </TouchableOpacity>
+            <Text style={styles.buttonText}>Reveal Answer</Text>
+          </Pressable>
         ) : (
-          <TouchableOpacity
-            style={{ ...styles.button, backgroundColor: '#4b5563' }}
-            onPress={resetQuiz}
-          >
-            <Text style={styles.buttonText}>Start Over</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <Pressable
+              style={{
+                ...styles.button,
+                ...styles.buttonHalf,
+                backgroundColor: '#dc2626',
+              }}
+              onPress={() => handleAnswer(false)}
+            >
+              <Text style={styles.buttonText}>Don&apos;t Know</Text>
+            </Pressable>
+            <Pressable
+              style={{
+                ...styles.button,
+                ...styles.buttonHalf,
+                backgroundColor: '#16a34a',
+              }}
+              onPress={() => handleAnswer(true)}
+            >
+              <Text style={styles.buttonText}>Know</Text>
+            </Pressable>
+          </View>
         )}
       </View>
     </View>
@@ -370,16 +188,14 @@ export default function ReviewScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Gray 900
-    height: '100vh', // Ensure full height in web preview
+    backgroundColor: '#111827',
+    height: '100vh',
     fontFamily: 'system-ui, -apple-system, sans-serif',
   },
   loadingContainer: {
-    flex: 1,
     backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100vh',
   },
   loadingText: {
     marginTop: 16,
@@ -387,7 +203,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    backgroundColor: '#1f2937', // Gray 800
+    backgroundColor: '#1f2937',
     paddingVertical: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
@@ -395,7 +211,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 10,
   },
   headerTitle: {
     color: '#ffffff',
@@ -409,95 +224,83 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   scoreText: {
-    color: '#60a5fa', // Blue 400
+    color: '#60a5fa',
     fontWeight: '600',
     fontSize: 16,
   },
-  scrollView: {
+  centerContent: {
     flex: 1,
-  },
-  scrollContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
-    paddingBottom: 120, // Increased space for footer
   },
-  card: {
-    borderRadius: 16,
-    padding: 32,
-    marginBottom: 24,
-    borderWidth: 1,
+  flashcard: {
+    backgroundColor: '#1f2937',
+    borderRadius: 24,
+    padding: 48,
+    width: '100%',
+    maxWidth: 600,
+    borderWidth: 2,
+    borderColor: '#374151',
+    minHeight: 300,
   },
   questionLabel: {
-    color: '#9ca3af', // Gray 400
+    color: '#9ca3af',
     fontSize: 14,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   questionText: {
-    color: '#f3f4f6', // Gray 100
-    fontSize: 22,
+    color: '#f3f4f6',
+    fontSize: 28,
     fontWeight: '500',
-    marginBottom: 24,
     lineHeight: 1.4,
   },
-  inputWrapper: {
+  answerSection: {
+    marginTop: 32,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#374151',
+    marginBottom: 24,
+  },
+  answerLabel: {
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 16,
+  },
+  answerText: {
+    color: '#60a5fa',
+    fontSize: 24,
+    fontWeight: '500',
+    lineHeight: 1.4,
+  },
+  fetchingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 8,
+    marginTop: 16,
   },
-  input: {
-    flex: 1,
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    fontSize: 20,
-    borderWidth: 2,
+  fetchingText: {
+    color: '#60a5fa',
+    fontSize: 14,
   },
-  checkButton: {
-    backgroundColor: '#374151',
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusIconContainer: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusIcon: {
+  completedText: {
+    color: '#ffffff',
     fontSize: 32,
     fontWeight: 'bold',
+    marginBottom: 16,
   },
-  correctionBox: {
-    marginTop: 20,
-    backgroundColor: 'rgba(127, 29, 29, 0.2)', // Red 900 with opacity
-    borderWidth: 1,
-    borderColor: 'rgba(127, 29, 29, 0.4)',
-    padding: 16,
-    borderRadius: 12,
-  },
-  correctionLabel: {
-    color: '#fca5a5', // Red 300
-    fontSize: 13,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  correctionText: {
-    color: '#fca5a5',
-    fontSize: 16,
-    marginTop: 2,
+  completedSubtext: {
+    color: '#9ca3af',
+    fontSize: 18,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#1f2937',
     borderTopWidth: 1,
     borderTopColor: '#374151',
@@ -508,6 +311,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  buttonHalf: {
+    flex: 1,
   },
   buttonText: {
     color: '#ffffff',
