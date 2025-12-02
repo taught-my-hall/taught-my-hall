@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     color: '#f3f4f6',
     fontSize: 28,
     fontWeight: '500',
-    lineHeight: 36,     
+    lineHeight: 36,
     flexShrink: 1,
     flexWrap: 'wrap',
   },
