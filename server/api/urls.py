@@ -11,4 +11,6 @@ urlpatterns = [
     path('furniture/<int:furniture_id>/', views.furniture_detail),
     path("review/", views.review_flashcard),
     path("review/queue/", views.review_queue),
+    path("questions/", views.flashcard_list),
+    path("questions/<int:card_id>/", views.flashcard_detail),
 ]

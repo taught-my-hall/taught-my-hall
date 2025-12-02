@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField
+from django.utils import timezone
 
 
 class Room(models.Model):
@@ -24,3 +24,18 @@ class Furniture(models.Model):
 
     def __str__(self):
         return f"{self.name} in room: {self.room.name}"
+
+
+class Flashcard(models.Model):
+    front = models.TextField()
+    back = models.TextField()
+    interval = models.IntegerField(default=1)
+    ease_factor = models.FloatField(default=2.5)
+    repetition = models.IntegerField(default=0)
+    next_review = models.DateTimeField(default=timezone.now)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.front[:30]}..."

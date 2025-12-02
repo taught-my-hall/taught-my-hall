@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Room, Furniture
+from .models import Room, Furniture, Flashcard
 import json
 from django.utils import timezone
 from .services.spaced_repetition import apply_sm2
@@ -255,3 +255,82 @@ def review_queue(request):
                 })
 
     return JsonResponse(cards_due, safe=False)
+
+
+@csrf_exempt
+def flashcard_list(request):
+    """
+    GET /api/questions     -> list all flashcards
+    POST /api/questions    -> create new flashcard
+    """
+    if request.method == "GET":
+        cards = Flashcard.objects.all()
+        data = [
+            {
+                "id": c.id,
+                "front": c.front,
+                "back": c.back,
+                "interval": c.interval,
+                "ease_factor": c.ease_factor,
+                "repetition": c.repetition,
+                "next_review": c.next_review.isoformat(),
+            }
+            for c in cards
+        ]
+        return JsonResponse(data, safe=False)
+
+    if request.method == "POST":
+        body = json.loads(request.body)
+
+        card = Flashcard.objects.create(
+            front=body["front"],
+            back=body["back"],
+            interval=body.get("interval", 1),
+            ease_factor=body.get("ease_factor", 2.5),
+            repetition=body.get("repetition", 0),
+            next_review=body.get("next_review"),
+        )
+
+        return JsonResponse({"id": card.id}, status=201)
+
+
+@csrf_exempt
+def flashcard_detail(request, card_id):
+    """
+    GET /api/questions/id       -> get specific question
+    PUT /api/questions/id       -> update
+    DELETE /api/questions/id    -> delete
+    """
+    try:
+        card = Flashcard.objects.get(id=card_id)
+    except Flashcard.DoesNotExist:
+        return JsonResponse({"error": "Flashcard not found"}, status=404)
+
+    if request.method == "GET":
+        return JsonResponse({
+            "id": card.id,
+            "front": card.front,
+            "back": card.back,
+            "interval": card.interval,
+            "ease_factor": card.ease_factor,
+            "repetition": card.repetition,
+            "next_review": card.next_review.isoformat(),
+        })
+
+    if request.method == "PUT":
+        body = json.loads(request.body)
+
+        card.front = body.get("front", card.front)
+        card.back = body.get("back", card.back)
+        card.interval = body.get("interval", card.interval)
+        card.ease_factor = body.get("ease_factor", card.ease_factor)
+        card.repetition = body.get("repetition", card.repetition)
+        card.next_review = body.get("next_review", card.next_review)
+
+        card.save()
+
+        return JsonResponse({"status": "updated"})
+
+    if request.method == "DELETE":
+        card.delete()
+        return JsonResponse({"status": "deleted"})
