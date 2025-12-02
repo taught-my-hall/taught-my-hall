@@ -7,18 +7,25 @@ let questionIdCounter = 1;
 
 // Simulates fetching new questions. Should be
 // called when less than 5 questions are left in the buffer
-const fakeFetch = async () => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const questions = Array.from({ length: 10 }, (_, i) => ({
-        id: questionIdCounter++,
-        front: `Question ${questionIdCounter - 1}?`,
-        back: `Answer ${questionIdCounter - 1}`,
-      }));
-      resolve({ questions });
-    }, 1000);
-  });
+const fetchQuestions = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/furniture/1/");
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // data.flashcards to tablica fiszek
+    return { questions: data.flashcards };
+  } catch (error) {
+    console.error("Error fetching flashcards:", error);
+    return { questions: [] };
+  }
 };
+
+
 
 // Simulates telling backend whether user knows or
 // doesn't know the question
@@ -48,7 +55,7 @@ export default function ReviewScreen() {
     setIsLoading(true);
     setError('');
 
-    fakeFetch()
+    fetchQuestions()
       .then(res => {
         for (const question of res.questions) {
           pushQuestion(question);
