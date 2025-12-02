@@ -261,7 +261,9 @@ const styles = StyleSheet.create({
     color: '#f3f4f6',
     fontSize: 28,
     fontWeight: '500',
-    lineHeight: 1.4,
+    lineHeight: 36,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   answerSection: {
     marginTop: 32,
@@ -283,7 +285,9 @@ const styles = StyleSheet.create({
     color: '#60a5fa',
     fontSize: 24,
     fontWeight: '500',
-    lineHeight: 1.4,
+    lineHeight: 32,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   fetchingIndicator: {
     flexDirection: 'row',
