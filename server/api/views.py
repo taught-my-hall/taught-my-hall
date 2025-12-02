@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Room, Furniture
 import json
+from django.utils import timezone
+from .services.spaced_repetition import apply_sm2
 
 def hello(request):
     return JsonResponse({'message': 'Hello world!'})
@@ -90,14 +92,9 @@ def furniture_list(request):
                 "name": f.name,
                 "description": f.description,
                 "flashcards": [
-                    {
-                        "id": fc.get("id"),
-                        "front": fc.get("front"),
-                        "back": fc.get("back"),
-                    }
+                    { **fc }  
                     for fc in f.flashcards
                 ],
-
             })
         return JsonResponse(data, safe=False)
 
@@ -120,11 +117,7 @@ def furniture_list(request):
             "name": furniture.name,
             "description": furniture.description,
             "flashcards": [
-                {
-                    "id": fc.get("id"),
-                    "front": fc.get("front"),
-                    "back": fc.get("back"),
-                }
+                { **fc }   
                 for fc in furniture.flashcards
             ],
         }, status=201)
@@ -148,11 +141,7 @@ def furniture_detail(request, furniture_id):
             "name": furniture.name,
             "description": furniture.description,
             "flashcards": [
-                {
-                    "id": fc.get("id"),
-                    "front": fc.get("front"),
-                    "back": fc.get("back"),
-                }
+                { **fc }
                 for fc in furniture.flashcards
             ],
 
@@ -178,11 +167,7 @@ def furniture_detail(request, furniture_id):
             "name": furniture.name,
             "description": furniture.description,
             "flashcards": [
-                {
-                    "id": fc.get("id"),
-                    "front": fc.get("front"),
-                    "back": fc.get("back"),
-                }
+                { **fc }
                 for fc in furniture.flashcards
             ],
         })
@@ -190,3 +175,83 @@ def furniture_detail(request, furniture_id):
     if request.method == "DELETE":
         furniture.delete()
         return JsonResponse({"status": "deleted"})
+        
+
+@csrf_exempt
+def review_flashcard(request):
+    """
+    POST -> apply SM-2 algorithm to one flashcard
+    body = { "furnitureId": int, "cardId": int, "grade": 0-5 }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+
+    body = json.loads(request.body)
+
+    furniture_id = body.get("furnitureId")
+    card_id = body.get("cardId")
+    grade = body.get("grade")
+
+    # Validate
+    if grade is None or not (0 <= grade <= 5):
+        return JsonResponse({"error": "grade must be 0–5"}, status=400)
+
+    try:
+        furniture = Furniture.objects.get(id=furniture_id)
+    except Furniture.DoesNotExist:
+        return JsonResponse({"error": "Furniture not found"}, status=404)
+
+    # Find card
+    card_list = furniture.flashcards
+    card = next((c for c in card_list if c["id"] == card_id), None)
+
+    if not card:
+        return JsonResponse({"error": "Flashcard not found"}, status=404)
+
+    # Apply SM-2 update
+    updated = apply_sm2(card, grade)
+
+    # Replace card in the list
+    for i, c in enumerate(card_list):
+        if c["id"] == card_id:
+            card_list[i] = updated
+            break
+
+    furniture.flashcards = card_list
+    furniture.save()
+
+    return JsonResponse(updated, safe=False)
+
+@csrf_exempt
+def review_queue(request):
+    """
+    GET -> return flashcards that should be reviewed now
+    Optional param: ?furnitureId=1
+    """
+    if request.method != "GET":
+        return JsonResponse({"error": "Only GET allowed"}, status=405)
+
+    furniture_id = request.GET.get("furnitureId")
+
+    if furniture_id:
+        furnitures = Furniture.objects.filter(id=furniture_id)
+    else:
+        furnitures = Furniture.objects.all()
+
+    now = timezone.now()
+
+    cards_due = []
+
+    for f in furnitures:
+        for card in f.flashcards:
+            next_review = card.get("next_review")
+            if next_review and timezone.datetime.fromisoformat(next_review.replace("Z", "+00:00")) <= now:
+                cards_due.append({
+                    "furnitureId": f.id,
+                    "cardId": card["id"],
+                    "front": card["front"],
+                    "back": card["back"],
+                    "next_review": next_review,
+                })
+
+    return JsonResponse(cards_due, safe=False)
