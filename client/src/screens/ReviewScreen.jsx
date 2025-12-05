@@ -136,13 +136,6 @@ export default function ReviewScreen() {
         </View>
       )}
 
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <Loader2 size={40} color="#3b82f6" />
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      )}
-
       {!!error && (
         <View style={styles.centerContent}>
           <Text style={{}}>{error}</Text>
@@ -168,20 +161,30 @@ export default function ReviewScreen() {
                 ...styles.button,
                 ...styles.buttonHalf,
                 backgroundColor: '#dc2626',
+                display: 'flex',
+                flexDirection: 'row',
               }}
               onPress={() => handleAnswer(false)}
             >
               <Text style={styles.buttonText}>Don&apos;t Know</Text>
+              {isLoading && (
+                <Loader2 size={16} color="#fff" style={{ marginLeft: 10 }} />
+              )}
             </Pressable>
             <Pressable
               style={{
                 ...styles.button,
                 ...styles.buttonHalf,
                 backgroundColor: '#16a34a',
+                display: 'flex',
+                flexDirection: 'row',
               }}
               onPress={() => handleAnswer(true)}
             >
               <Text style={styles.buttonText}>Know</Text>
+              {isLoading && (
+                <Loader2 size={16} color="#fff" style={{ marginLeft: 10 }} />
+              )}
             </Pressable>
           </View>
         )}
