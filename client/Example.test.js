@@ -20,6 +20,8 @@ const SomeComponent = () => {
 };
 
 describe('Rendering component', () => {
-  render(<SomeComponent />);
-  expect(screen.getByText('I love testing software')).toBeOnTheScreen();
+  test('it works', () => {
+    render(<SomeComponent />);
+    expect(screen.getByText('I love testing software')).toBeOnTheScreen();
+  });
 });
