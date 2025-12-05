@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react'; // Added optimization hooks
 import { Layer, Stage } from 'react-konva';
 import { Dimensions, Platform, StyleSheet } from 'react-native';
 import {
@@ -15,7 +15,29 @@ import PalaceTile from '../components/palaceTile';
 
 const { width, height } = Dimensions.get('window');
 
-export default function PalaceScreen() {
+// 1. MOVE STATIC DATA OUTSIDE THE COMPONENT
+// This prevents it from being re-created in memory on every render.
+const PALACE_MAP_RAW = [
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2_table_', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__'],
+  ['3__', '3__0', '3__', '3__', '3__', '0__', '4__', '4__', '4__0', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+  ['3__', '3__', '3_chairLeft_', '3__', '3__', '0__', '4__', '4_table_', '4__', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+];
+
+const SPLIT_MAP = PALACE_MAP_RAW.map(row => row.map(cell => cell.split('_')));
+const MAP_HEIGHT = SPLIT_MAP.length;
+const MAP_WIDTH = SPLIT_MAP[0].length;
+const TILE_SIZE = 100;
+
+function PalaceScreen() {
   const navigation = useNavigation();
 
   const scale = useSharedValue(1);
@@ -26,40 +48,48 @@ export default function PalaceScreen() {
   const savedTranslateY = useSharedValue(0);
 
   // --- GESTURES ---
-  const panGesture = Gesture.Pan()
-    .minDistance(3)
-    .averageTouches(true)
-    .onUpdate(e => {
-      translateX.value = savedTranslateX.value + e.translationX;
-      translateY.value = savedTranslateY.value + e.translationY;
-    })
-    .onEnd(() => {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-    });
+  // Memoize gesture handlers to prevent recreation on every render
+  const panGesture = useMemo(() => 
+    Gesture.Pan()
+      .minDistance(3)
+      .averageTouches(true)
+      .onUpdate(e => {
+        translateX.value = savedTranslateX.value + e.translationX;
+        translateY.value = savedTranslateY.value + e.translationY;
+      })
+      .onEnd(() => {
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      }),
+    [translateX, translateY, savedTranslateX, savedTranslateY]
+  );
 
-  const pinchGesture = Gesture.Pinch()
-    .onUpdate(e => {
-      scale.value = savedScale.value * e.scale;
-    })
-    .onEnd(() => {
-      savedScale.value = scale.value;
-    });
+  const pinchGesture = useMemo(() => 
+    Gesture.Pinch()
+      .onUpdate(e => {
+        scale.value = savedScale.value * e.scale;
+      })
+      .onEnd(() => {
+        savedScale.value = scale.value;
+      }),
+    [scale, savedScale]
+  );
 
-  const composedGestures = Gesture.Simultaneous(panGesture, pinchGesture);
+  const composedGestures = useMemo(() => 
+    Gesture.Simultaneous(panGesture, pinchGesture),
+    [panGesture, pinchGesture]
+  );
 
-  const handleWheel = e => {
+  // Memoize the wheel handler to prevent recreation on every render
+  const handleWheel = useCallback(e => {
     if (Platform.OS !== 'web') return;
-
     const scrollAmount = e.deltaY;
     const sensitivity = 0.001;
     let newScale = scale.value - scrollAmount * sensitivity;
-
     newScale = Math.max(0.5, Math.min(newScale, 5));
-
     scale.value = newScale;
     savedScale.value = newScale;
-  };
+  }, [scale, savedScale]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -71,260 +101,78 @@ export default function PalaceScreen() {
     };
   });
 
-  const [svgReload, setSvgReload] = useState(0);
+  // 2. PRE-CALCULATE GRID LOGIC
+  // We use useMemo to calculate all the "flags" (borders) only once on mount.
+  // This removes the heavy math from the render loop.
+  const processedTiles = useMemo(() => {
+    const tiles = [];
 
-  const palaceMap = [
-    [
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '0__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-    ],
-    [
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '0__',
-      '2_table_',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-    ],
-    [
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '0__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-    ],
-    [
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '0__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-    ],
-    [
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '1__',
-      '0__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-      '2__',
-    ],
-    [
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-      '0__',
-    ],
-    [
-      '3__',
-      '3__0',
-      '3__',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4__',
-      '4__0',
-      '4__',
-      '4__',
-    ],
-    [
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-    ],
-    [
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-    ],
-    [
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-    ],
-    [
-      '3__',
-      '3__',
-      '3_chairLeft_',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4_table_',
-      '4__',
-      '4__',
-      '4__',
-    ],
-    [
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '3__',
-      '0__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-      '4__',
-    ],
-  ];
+    SPLIT_MAP.forEach((row, i) => {
+      row.forEach((tile, j) => {
+        const el = tile[0];
 
-  const splitMap = palaceMap.map(row => row.map(cell => cell.split('_')));
+        // Helper for boundary check to keep code clean
+        const check = (r, c) => SPLIT_MAP[r][c][0] !== el;
+        const checkDiag = (r, c) => SPLIT_MAP[r][c][0] !== el && SPLIT_MAP[r][c][0] !== '0';
 
-  const mapHeight = splitMap.length;
-  const mapWidth = splitMap[0].length;
-  const tileSize = 100;
+        const top = i === 0 ? el !== '0' : check(i - 1, j);
+        const bottom = i === MAP_HEIGHT - 1 ? el !== '0' : check(i + 1, j);
+        const left = j === 0 ? el !== '0' : check(i, j - 1);
+        const right = j === MAP_WIDTH - 1 ? el !== '0' : check(i, j + 1);
 
-  const furnitureClick = (row, col) => {
-    console.log(`Furniture clicked at row ${row} | col ${col}`);
-    navigation.navigate('Furniture');
-  };
+        const topLeft = (i === 0 || j === 0) ? false : checkDiag(i - 1, j - 1);
+        const topRight = (i === 0 || j === MAP_WIDTH - 1) ? false : checkDiag(i - 1, j + 1);
+        const bottomLeft = (i === MAP_HEIGHT - 1 || j === 0) ? false : checkDiag(i + 1, j - 1);
+        const bottomRight = (i === MAP_HEIGHT - 1 || j === MAP_WIDTH - 1) ? false : checkDiag(i + 1, j + 1);
+
+        tiles.push(
+            <PalaceTile
+                key={`${i}-${j}-tile`}
+                tileData={tile}
+                i={i}
+                j={j}
+                s={TILE_SIZE}
+                flags={[
+                  top,
+                  topRight,
+                  right,
+                  bottomRight,
+                  bottom,
+                  bottomLeft,
+                  left,
+                  topLeft,
+                ]}
+            />
+        );
+      });
+    });
+    return tiles;
+  }, []); // Empty dependency array = runs once on mount
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <GestureDetector gesture={composedGestures}>
-        <Animated.View
-          style={style.container}
-          {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
-        >
-          <Animated.View style={[style.rectangle, animatedStyle]}>
-            <Stage width={mapWidth * tileSize} height={mapHeight * tileSize}>
-              <Layer>
-                {splitMap.map((row, i) =>
-                  row.map((tile, j) => {
-                    const isRoom = tile[0][0] !== '0';
-                    const el = tile[0];
-                    const top =
-                      i === 0
-                        ? el !== '0' // granica, ale tylko jeśli to nie korytarz
-                        : splitMap[i - 1][j][0] !== el;
-
-                    const bottom =
-                      i === mapHeight - 1
-                        ? el !== '0'
-                        : splitMap[i + 1][j][0] !== el;
-
-                    const left =
-                      j === 0 ? el !== '0' : splitMap[i][j - 1][0] !== el;
-
-                    const right =
-                      j === mapWidth - 1
-                        ? el !== '0'
-                        : splitMap[i][j + 1][0] !== el;
-
-                    const topLeft =
-                      i === 0 || j === 0
-                        ? false
-                        : splitMap[i - 1][j - 1][0] !== el &&
-                          splitMap[i - 1][j - 1][0] !== '0';
-
-                    const topRight =
-                      i === 0 || j === mapWidth - 1
-                        ? false
-                        : splitMap[i - 1][j + 1][0] !== el &&
-                          splitMap[i - 1][j + 1][0] !== '0';
-
-                    const bottomLeft =
-                      i === mapHeight - 1 || j === 0
-                        ? false
-                        : splitMap[i + 1][j - 1][0] !== el &&
-                          splitMap[i + 1][j - 1][0] !== '0';
-
-                    const bottomRight =
-                      i === mapHeight - 1 || j === mapWidth - 1
-                        ? false
-                        : splitMap[i + 1][j + 1][0] !== el &&
-                          splitMap[i + 1][j + 1][0] !== '0';
-                    return (
-                      <PalaceTile
-                        key={`${i}-${j}-tile`}
-                        tileData={tile}
-                        i={i}
-                        j={j}
-                        s={tileSize}
-                        flags={[
-                          top,
-                          topRight,
-                          right,
-                          bottomRight,
-                          bottom,
-                          bottomLeft,
-                          left,
-                          topLeft,
-                        ]}
-                      ></PalaceTile>
-                    );
-                  })
-                )}
-              </Layer>
-            </Stage>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureDetector gesture={composedGestures}>
+          <Animated.View
+              style={style.container}
+              {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
+          >
+            <Animated.View style={[style.rectangle, animatedStyle]}>
+              <Stage width={MAP_WIDTH * TILE_SIZE} height={MAP_HEIGHT * TILE_SIZE}>
+                {/* 3. ADD LISTENING={FALSE}
+                 If you do not need click events on the *Layer itself*,
+                 set listening={false} to improve hit-graph performance.
+                 Events on children (PalaceTile) will still work if configured correctly,
+                 but usually, you want this on the layer or background tiles.
+              */}
+                {/* Set listening={false} to improve hit-graph performance */}
+                <Layer listening={false}>
+                  {processedTiles}
+                </Layer>
+              </Stage>
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
-      </GestureDetector>
-    </GestureHandlerRootView>
+        </GestureDetector>
+      </GestureHandlerRootView>
   );
 }
 
@@ -339,20 +187,13 @@ const style = StyleSheet.create({
     height: '100%',
   },
   rectangle: {
-    height: 1000,
-    aspectRatio: 1 / 1,
+    // Ideally calculated from content, but large enough to cover
+    height: MAP_HEIGHT * TILE_SIZE,
+    width: MAP_WIDTH * TILE_SIZE,
     backgroundColor: '#4a90e2',
-    borderRadius: 10,
-  },
-  roomSectorClick: {
-    position: 'absolute',
-    height: 190,
-    width: 190,
-    borderWidth: 2,
-    borderColor: '#00000037',
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    // borderRadius: 10, // Border radius on a canvas container can sometimes cause perf issues on Android
   },
 });
+
+// Export a memoized version of the component to prevent unnecessary re-renders
+export default memo(PalaceScreen);
