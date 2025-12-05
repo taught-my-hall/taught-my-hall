@@ -1,24 +1,23 @@
 import { Brain, Pencil, Plus, Sparkles } from 'lucide-react'; // Changed from lucide-react-native
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const PalaceCard = ({ title, icon: Icon, iconColor, borderColor }) => (
-    <TouchableOpacity
-        activeOpacity={0.8}
-        style={[styles.card, { borderColor: borderColor }]}
-    >
-      <View style={styles.cardContent}>
-        <View style={styles.iconWrapper}>
-          {/* lucide-react accepts size and color props just like the native version */}
-          <Icon size={24} color={iconColor} />
-        </View>
-        <Text style={styles.cardText}>{title}</Text>
+  <TouchableOpacity
+    activeOpacity={0.8}
+    style={[styles.card, { borderColor: borderColor }]}
+  >
+    <View style={styles.cardContent}>
+      <View style={styles.iconWrapper}>
+        {/* lucide-react accepts size and color props just like the native version */}
+        <Icon size={24} color={iconColor} />
       </View>
-      <View style={styles.plusIcon}>
-        <Plus size={24} color="white" strokeWidth={1.5} />
-      </View>
-    </TouchableOpacity>
+      <Text style={styles.cardText}>{title}</Text>
+    </View>
+    <View style={styles.plusIcon}>
+      <Plus size={24} color="white" strokeWidth={1.5} />
+    </View>
+  </TouchableOpacity>
 );
 
 PalaceCard.propTypes = {
@@ -30,37 +29,37 @@ PalaceCard.propTypes = {
 
 export default function PalaceList() {
   return (
-      <View style={styles.container}>
-        <Text style={styles.headerTitle}>Add new Palace</Text>
+    <View style={styles.container}>
+      <Text style={styles.headerTitle}>Add new Palace</Text>
 
+      <PalaceCard
+        title="Create new palace"
+        icon={Pencil}
+        iconColor="#FFF"
+        borderColor="#FFF"
+      />
+      {/* Section Header */}
+      <Text style={styles.sectionHeader}>Official Premade palaces</Text>
+
+      {/* List Items */}
+      <View style={styles.listContainer}>
+        {/* Item 1: Purple */}
         <PalaceCard
-            title="Create new palace"
-            icon={Pencil}
-            iconColor="#FFF"
-            borderColor="#FFF"
+          title="Machine learning Palace"
+          icon={Brain}
+          iconColor="#9333EA" // Purple-600
+          borderColor="#7E22CE" // Purple-700
         />
-        {/* Section Header */}
-        <Text style={styles.sectionHeader}>Official Premade palaces</Text>
 
-        {/* List Items */}
-        <View style={styles.listContainer}>
-          {/* Item 1: Purple */}
-          <PalaceCard
-              title="Machine learning Palace"
-              icon={Brain}
-              iconColor="#9333EA" // Purple-600
-              borderColor="#7E22CE" // Purple-700
-          />
-
-          {/* Item 2: Cyan */}
-          <PalaceCard
-              title="Machine learning Palace"
-              icon={Sparkles}
-              iconColor="#22D3EE" // Cyan-400
-              borderColor="#0891B2" // Cyan-600
-          />
-        </View>
+        {/* Item 2: Cyan */}
+        <PalaceCard
+          title="Machine learning Palace"
+          icon={Sparkles}
+          iconColor="#22D3EE" // Cyan-400
+          borderColor="#0891B2" // Cyan-600
+        />
       </View>
+    </View>
   );
 }
 
