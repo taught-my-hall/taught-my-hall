@@ -1,4 +1,5 @@
 import { Brain, Pencil, Plus, Sparkles } from 'lucide-react-native';
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -18,6 +19,14 @@ const PalaceCard = ({ title, icon: Icon, iconColor, borderColor }) => (
     </View>
   </TouchableOpacity>
 );
+
+PalaceCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  // usage of 'elementType' because you pass the component itself (e.g., Pencil), not <Pencil />
+  icon: PropTypes.elementType.isRequired,
+  iconColor: PropTypes.string,
+  borderColor: PropTypes.string,
+};
 
 export default function PalaceList() {
   const [inputValue, setInputValue] = useState('');
