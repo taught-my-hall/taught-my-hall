@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import Animated, {
@@ -12,12 +13,12 @@ export default function Vignette({ isOpened, children }) {
 
   useAnimatedReaction(
     () => isOpened.value,
-    (currentValue, previousValue) => {
-      if (currentValue !== previousValue) {
+    currentValue => {
+      if (currentValue !== isBlocking) {
         runOnJS(setIsBlocking)(currentValue);
       }
     },
-    [isOpened]
+    [isOpened, isBlocking]
   );
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -26,13 +27,17 @@ export default function Vignette({ isOpened, children }) {
     };
   });
 
+  const handleClose = () => {
+    isOpened.value = false;
+  };
+
   return (
     <Animated.View
       style={[style.vignetteOverlay, animatedStyle]}
       pointerEvents="box-none"
     >
       <Pressable
-        onPress={() => (isOpened.value = false)}
+        onPress={handleClose}
         style={style.vignetteGradient}
         pointerEvents={isBlocking ? 'auto' : 'none'}
       />
@@ -46,6 +51,13 @@ export default function Vignette({ isOpened, children }) {
     </Animated.View>
   );
 }
+
+Vignette.propTypes = {
+  isOpened: PropTypes.shape({
+    value: PropTypes.bool.isRequired,
+  }).isRequired,
+  children: PropTypes.node,
+};
 
 const style = StyleSheet.create({
   vignetteOverlay: {
