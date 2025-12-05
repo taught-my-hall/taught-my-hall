@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from api.models import Room, Furniture
+from api.models import Room, Furniture, Flashcard
 from django.utils import timezone
 
 
@@ -59,32 +59,26 @@ class Command(BaseCommand):
             ("Why is soybean inoculation cost-effective?",
              "It reduces the need for synthetic nitrogen fertilizers."),
         ]
-        
-        flashcards = [
-            {
-                "id": i + 1,
-                "front": front,
-                "back": back,
-                "interval": 1,      
-                "ease_factor": 2.5,    
-                "repetition": 0,       
-                "next_review": timezone.now().isoformat()  
-            }
-            for i, (front, back) in enumerate(raw_flashcards)
-        ]
 
-        furniture, created = Furniture.objects.get_or_create(
+        furniture, _ = Furniture.objects.get_or_create(
             room=room,
             name="Soybean Inoculation Basics",
             defaults={
                 "description": "20 flashcards about soybean inoculation",
-                "flashcards": flashcards,
+                "user": user
             }
         )
 
-        if not created:
-            furniture.flashcards = flashcards
-            furniture.description = "20 flashcards about soybean inoculation"
-            furniture.save()
+        for front, back in raw_flashcards:
+            Flashcard.objects.get_or_create(
+                furniture=furniture,
+                user=user,
+                front=front,
+                back=back,
+                interval=1,
+                ease_factor=2.5,
+                repetition=0,
+                next_review=timezone.now()
+            )
 
         self.stdout.write(self.style.SUCCESS("Seeding completed."))
