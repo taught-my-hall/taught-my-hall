@@ -1,16 +1,9 @@
-from django.urls import path
-from . import views
+from rest_framework.routers import DefaultRouter
+from .views import RoomViewSet, FurnitureViewSet, FlashcardViewSet
 
-urlpatterns = [
-    path('hello/', views.hello),
-    path('foobar/', views.foobar),
-    path('rooms/', views.rooms_list),
-    path('rooms/<int:room_id>/', views.room_detail),
-    path('rooms/<int:room_id>/furniture/', views.room_furniture),
-    path('furniture/', views.furniture_list),
-    path('furniture/<int:furniture_id>/', views.furniture_detail),
-    path("review/", views.review_flashcard),
-    path("review/queue/", views.review_queue),
-    path("questions/", views.flashcard_list),
-    path("questions/<int:card_id>/", views.flashcard_detail),
-]
+router = DefaultRouter()
+router.register(r"rooms", RoomViewSet)
+router.register(r"furniture", FurnitureViewSet)
+router.register(r"flashcards", FlashcardViewSet, basename="flashcards")
+
+urlpatterns = router.urls
