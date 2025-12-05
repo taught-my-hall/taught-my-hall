@@ -1,8 +1,8 @@
+import PropTypes from 'prop-types';
 import { memo, useMemo } from 'react';
 import { Group } from 'react-konva';
 import Furniture from './Furniture';
 import TexturePolygon from './TexturedPolygon';
-
 // --- CONSTANTS ---
 const h = 6;
 const r = 5;
