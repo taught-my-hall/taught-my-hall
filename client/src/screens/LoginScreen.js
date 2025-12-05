@@ -58,7 +58,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    navigation.navigate('Backrooms');
+    navigation.navigate('Palace');
   };
 
   return (

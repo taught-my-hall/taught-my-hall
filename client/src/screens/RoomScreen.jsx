@@ -247,11 +247,11 @@ export default function RoomScreen() {
   });
 
   const furnitures = [
-    [null, null, null, 'chair_back', null],
-    [null, null, 'chair_left', 'table', 'chair_right'],
-    [null, 'chair_back', null, 'chair_front', null],
-    ['chair_left', 'table', 'chair_right', null, null],
-    [null, 'chair_front', null, null, null],
+    [null, null, null, 'chairBack', null],
+    [null, null, 'chairLeft', 'table', 'chairRight'],
+    [null, 'chairBack', null, 'chairFront', null],
+    ['chairLeft', 'table', 'chairRight', null, null],
+    [null, 'chairFront', null, null, null],
   ];
 
   const furnitureClick = (row, col) => {
