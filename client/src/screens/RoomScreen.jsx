@@ -18,10 +18,10 @@ import {
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import Furniture from '../components/Furniture';
 import TexturePolygon from '../components/TexturedPolygon';
+import Vignette from '../components/Vignette';
 import FurnitureScreen from './FurnitureScreen';
 
 //Room settings
@@ -240,12 +240,6 @@ export default function RoomScreen() {
     ],
   }));
 
-  const vignetteAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(isFurnitureOpen.value ? 1 : 0, { duration: 300 }),
-    };
-  });
-
   const furnitures = [
     [null, null, null, 'chair_back', null],
     [null, null, 'chair_left', 'table', 'chair_right'],
@@ -259,12 +253,12 @@ export default function RoomScreen() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{ flex: 1 }}
+      {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
+    >
       <GestureDetector gesture={composedGestures}>
-        <Animated.View
-          style={style.container}
-          {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
-        >
+        <Animated.View style={style.container}>
           <Animated.View style={[style.roomContent, animatedStyle]}>
             <Stage width={ROOM_WIDTH} height={ROOM_HEIGHT}>
               <Layer>
@@ -326,19 +320,9 @@ export default function RoomScreen() {
         </Animated.View>
       </GestureDetector>
 
-      {/* --- VIGNETTE OVERLAY --- */}
-      {/* pointerEvents="none" ensures clicks pass through to the room */}
-      <Animated.View
-        style={[style.vignetteOverlay, vignetteAnimatedStyle]}
-        pointerEvents="none"
-      >
-        <View style={style.vignetteGradient} />
-
-        <View style={style.vignetteTextContainer}>
-          <FurnitureScreen />
-        </View>
-      </Animated.View>
-
+      <Vignette isOpened={isFurnitureOpen}>
+        <FurnitureScreen />
+      </Vignette>
       <Pressable
         onPress={() => navigation.navigate('Review')}
         style={style.reviewButton}
@@ -382,57 +366,5 @@ const style = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 200, // Ensure button is above vignette
-  },
-
-  // --- VIGNETTE STYLES ---
-  vignetteOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 100, // Above room, below UI buttons
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vignetteGradient: {
-    // IMPORTANT: Make this absolute so it doesn't push the text around
-    ...StyleSheet.absoluteFillObject,
-    // Web Support: Standard CSS gradient
-    ...(Platform.OS === 'web'
-      ? {
-          backgroundImage:
-            'radial-gradient(circle, transparent 40%, rgba(20, 20, 20, 0.7) 90%)',
-        }
-      : {
-          // Native Fallback: A simple border frame to mimic window/vignette
-          borderWidth: 50,
-          borderColor: 'rgba(20, 20, 20, 0.4)',
-        }),
-  },
-  // New Styles for Text
-  vignetteTextContainer: {
-    alignItems: 'center',
-    opacity: 0.8,
-    width: 800,
-    height: 800,
-    backgroundColor: 'black',
-    borderRadius: 30,
-    borderColor: 'white',
-    borderWidth: 2,
-    // Optional: Add top padding if you want text higher up
-    // paddingBottom: 300,
-  },
-  vignetteTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-    marginBottom: 8,
-  },
-  vignetteSubtitle: {
-    fontSize: 16,
-    color: '#DDD',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
 });

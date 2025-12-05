@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
       display: 'flex',
       gap: 8,
       maxHeight: 600,
-      overflowY: 'auto',
+      overflowY: 'hidden',
     },
     question: {
       display: 'flex',
