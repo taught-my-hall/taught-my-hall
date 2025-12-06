@@ -7,11 +7,13 @@ export default function Furniture({
   modelname,
   // eslint-disable-next-line
   offset = [0, 0],
+  // eslint-disable-next-line
+  scale = 1,
 }) {
   const [offsetX, offsetY] = offset;
 
   return (
-    <Group x={offsetX} y={offsetY}>
+    <Group x={offsetX} y={offsetY} scaleX={scale} scaleY={scale}>
       {models[modelname].map((cuboid, cuboidIndex) =>
         cuboid.map((poly, polyIndex) => {
           const offsetPoints = poly.points.map(([x, y]) => [x, y]);
