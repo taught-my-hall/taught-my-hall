@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegisterSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 
 
 class RegisterView(APIView):
@@ -17,13 +17,12 @@ class RegisterView(APIView):
 
         user = serializer.save()
 
-        refresh = RefreshToken.for_user(user)
+        token  = AccessToken.for_user(user)
 
         return Response(
         {
                 "message": "User created",
-                "token": str(refresh.access_token),
-                "refresh": str(refresh)
+                "token": str(token)
             },
             status=status.HTTP_201_CREATED
         )
