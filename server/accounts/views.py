@@ -1,7 +1,8 @@
+from django.core.serializers import serialize
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
 
@@ -25,4 +26,24 @@ class RegisterView(APIView):
                 "token": str(token)
             },
             status=status.HTTP_201_CREATED
+        )
+
+
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+        user = serializer.validated_data['user']
+
+        token = AccessToken.for_user(user)
+
+        return Response(
+            {
+                "message": "Login successful",
+                "token": str(token)
+            },
+            status=status.HTTP_200_OK
         )
