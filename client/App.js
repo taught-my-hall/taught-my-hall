@@ -3,9 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BackroomScreen from './src/screens/BackroomScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 import ReviewScreen from './src/screens/ReviewScreen';
 import RoomScreen from './src/screens/RoomScreen';
-import RegisterScreen from "./src/screens/RegisterScreen";
 
 const RootStack = createNativeStackNavigator({
   screens: {

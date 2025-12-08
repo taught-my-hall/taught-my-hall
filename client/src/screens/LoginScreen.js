@@ -1,6 +1,13 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import {Button, Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import {
+  Button,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 const styles = StyleSheet.create({
   container: {
@@ -94,9 +101,9 @@ export default function LoginScreen() {
 
         <Button title="Login" onPress={handleLogin} />
 
-      <Pressable style={styles.smallLink} onPress={navigateToRegister}>
-        <Text style={styles.createAccount}>Create account</Text>
-      </Pressable>
+        <Pressable style={styles.smallLink} onPress={navigateToRegister}>
+          <Text style={styles.createAccount}>Create account</Text>
+        </Pressable>
       </View>
     </View>
   );
