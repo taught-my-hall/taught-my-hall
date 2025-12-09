@@ -66,10 +66,7 @@ export default function BackroomScreen() {
   };
 
   const handleRoomEnter = () => {
-    // TODO: navigate back to RoomScreen after implementing it
-    // Then from RoomScreen navigate to FurnitureScreen
-    // navigation.navigate('Room');
-    navigation.navigate('Room');
+    navigation.navigate('Palace');
   };
 
   const vignetteAnimatedStyle = useAnimatedStyle(() => {
