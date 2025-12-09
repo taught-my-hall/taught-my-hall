@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { memo, useCallback, useMemo } from 'react'; // Added optimization hooks
+import { memo, useCallback, useMemo } from 'react';
 import { Layer, Stage } from 'react-konva';
 import { Dimensions, Platform, StyleSheet } from 'react-native';
 import {
