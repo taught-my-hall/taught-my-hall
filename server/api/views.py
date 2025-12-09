@@ -141,7 +141,7 @@ class FlashcardViewSet(viewsets.ModelViewSet):
     def review(self, request, pk=None):
         """
         POST /flashcards/<id>/review/
-        body = {"grade": int 0-5}
+        Body: {"grade": 0–5}
         """
         card = self.get_object()
         
@@ -149,8 +149,8 @@ class FlashcardViewSet(viewsets.ModelViewSet):
         if card.user != request.user:
             return Response({"error": "Not allowed"}, status=403)
             
+        # Validate input
         grade = request.data.get("grade")
-
         if grade is None:
             return Response({"error": "grade is required"}, status=400)
 
@@ -162,6 +162,7 @@ class FlashcardViewSet(viewsets.ModelViewSet):
         if not (0 <= grade <= 5):
             return Response({"error": "grade must be between 0 and 5"}, status=400)
 
+        # Prepare card data for SM2
         card_data = {
             "id": card.id,
             "interval": card.interval,
@@ -171,17 +172,18 @@ class FlashcardViewSet(viewsets.ModelViewSet):
         }
 
         updated = apply_sm2(card_data, grade)
-        
+
         from datetime import datetime
         iso_value = updated["next_review"]
         next_review_dt = datetime.fromisoformat(iso_value.replace("Z", "+00:00"))
 
+        # Save updated values
         card.interval = updated["interval"]
         card.ease_factor = updated["ease_factor"]
         card.repetition = updated["repetition"]
         card.next_review = next_review_dt
         card.save()
-        
+
         return Response({
             "message": "Review updated successfully",
             "flashcard": FlashcardSerializer(card).data

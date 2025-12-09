@@ -3,6 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BackroomScreen from './src/screens/BackroomScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import PalaceCreatorScreen from './src/screens/PalaceCreatorScreen';
+import PalaceScreen from './src/screens/PalaceScreen';
 import ReviewScreen from './src/screens/ReviewScreen';
 import RoomScreen from './src/screens/RoomScreen';
 
@@ -18,11 +20,17 @@ const RootStack = createNativeStackNavigator({
     Backrooms: {
       screen: BackroomScreen,
     },
+    Palace: {
+      screen: PalaceScreen,
+    },
     Room: {
       screen: RoomScreen,
     },
     Review: {
       screen: ReviewScreen,
+    },
+    PalaceCreator: {
+      screen: PalaceCreatorScreen,
     },
   },
 });
