@@ -38,7 +38,7 @@ const models = {
     createCuboid([0.75, 0.7], [0.8, 0.5], [0.83, 0.45], ['wood2']),
     createCuboid([0.15, 0.5], [0.8, 0.45], [0.88, 0.35], ['wood2']),
   ],
-  chair_left: [
+  chairLeft: [
     createCuboid([0.4, 0.6], [0.45, 0.5], [0.48, 0.45], ['wood1']), // left back
     createCuboid([0.6, 0.6], [0.65, 0.5], [0.68, 0.45], ['wood1']), // right back
     createCuboid([0.35, 0.7], [0.4, 0.6], [0.43, 0.55], ['wood1']), // left front
@@ -46,7 +46,7 @@ const models = {
     createCuboid([0.35, 0.6], [0.6, 0.55], [0.68, 0.4], ['wood1']), // plank
     createCuboid([0.35, 0.55], [0.4, 0.35], [0.48, 0.2], ['wood1']),
   ],
-  chair_back: [
+  chairBack: [
     createCuboid([0.4, 0.6], [0.45, 0.5], [0.48, 0.45], ['wood1']),
     createCuboid([0.6, 0.6], [0.65, 0.5], [0.68, 0.45], ['wood1']),
     createCuboid([0.35, 0.7], [0.4, 0.6], [0.43, 0.55], ['wood1']),
@@ -55,7 +55,7 @@ const models = {
     createCuboid([0.4, 0.45], [0.65, 0.3], [0.68, 0.25], ['wood1']),
   ],
 
-  chair_right: [
+  chairRight: [
     createCuboid([0.4, 0.6], [0.45, 0.5], [0.48, 0.45], ['wood1']),
     createCuboid([0.6, 0.6], [0.65, 0.5], [0.68, 0.45], ['wood1']),
     createCuboid([0.35, 0.7], [0.4, 0.6], [0.43, 0.55], ['wood1']),
@@ -64,7 +64,7 @@ const models = {
     createCuboid([0.55, 0.55], [0.6, 0.35], [0.68, 0.2], ['wood1']), // right
   ],
 
-  chair_front: [
+  chairFront: [
     createCuboid([0.4, 0.6], [0.45, 0.5], [0.48, 0.45], ['wood1']),
     createCuboid([0.6, 0.6], [0.65, 0.5], [0.68, 0.45], ['wood1']),
     createCuboid([0.35, 0.7], [0.4, 0.6], [0.43, 0.55], ['wood1']),
