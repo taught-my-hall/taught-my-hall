@@ -1,7 +1,7 @@
-from django.core.serializers import serialize
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -44,6 +44,18 @@ class LoginView(APIView):
             {
                 "message": "Login successful",
                 "token": str(token)
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        return Response(
+            {
+                "message": "Logout successful"
             },
             status=status.HTTP_200_OK
         )
