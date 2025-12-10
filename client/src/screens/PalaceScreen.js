@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { memo, useCallback, useMemo } from 'react';
 import { Layer, Stage } from 'react-konva';
-import { Dimensions, Platform, StyleSheet } from 'react-native';
+import { Dimensions, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import {
   Gesture,
   GestureDetector,
@@ -220,6 +220,12 @@ function PalaceScreen() {
           </Animated.View>
         </Animated.View>
       </GestureDetector>
+      <Pressable
+        onPress={() => navigation.navigate('Review')}
+        style={style.reviewButton}
+      >
+        <Text style={{ fontSize: 24, color: '#FFF' }}>Review</Text>
+      </Pressable>
     </GestureHandlerRootView>
   );
 }
@@ -240,6 +246,20 @@ const style = StyleSheet.create({
     width: MAP_WIDTH * TILE_SIZE,
     backgroundColor: '#4a90e2',
     // borderRadius: 10, // Border radius on a canvas container can sometimes cause perf issues on Android
+  },
+  reviewButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 50,
+    width: 200,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+    borderColor: '#FFF',
+    borderWidth: 2,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 200, // Ensure button is above vignette
   },
 });
 
