@@ -1,7 +1,13 @@
 import { useNavigation } from '@react-navigation/native';
 import { memo, useCallback, useMemo } from 'react';
 import { Layer, Stage } from 'react-konva';
-import { Dimensions, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {
   Gesture,
   GestureDetector,
