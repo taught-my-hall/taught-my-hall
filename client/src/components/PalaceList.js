@@ -47,7 +47,7 @@ export default function PalaceList() {
 
       <View style={styles.listContainer}>
         <PalaceCard
-          onPress={() => console.log('Yet to be added')}
+          onPress={() => navigation.navigate('PalaceCreator')}
           title="Machine learning Palace"
           icon={Brain}
           iconColor="#9333EA" // Purple-600
@@ -55,7 +55,7 @@ export default function PalaceList() {
         />
 
         <PalaceCard
-          onPress={() => console.log('Yet to be added')}
+          onPress={() => navigation.navigate('PalaceCreator')}
           title="Machine learning Palace"
           icon={Sparkles}
           iconColor="#22D3EE" // Cyan-400

@@ -17,7 +17,7 @@ export default function HomeScreen() {
         setLoading(false);
       })
       .catch(error => {
-        console.log('Error fetching rooms:', error);
+        console.error('Error fetching rooms:', error);
         setLoading(false);
       });
   }, []);

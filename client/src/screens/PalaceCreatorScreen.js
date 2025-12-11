@@ -83,7 +83,6 @@ export default function PalaceCreatorScreen() {
   const handleRoomPress = id => {
     setActiveRoomId(id);
     activeRoomIdRef.current = id;
-    console.log('Selected Room ID:', id);
   };
 
   const Cell = React.memo(

@@ -34,7 +34,6 @@ export default function BackroomScreen() {
 
   const offset = useRef(new Animated.Value(0)).current;
 
-  console.log(pointer);
   const pointedRooms = [pointer - 1, pointer, pointer + 1];
 
   const animateMove = direction => {
