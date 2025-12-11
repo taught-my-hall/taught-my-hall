@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Button,
@@ -60,16 +60,13 @@ const styles = StyleSheet.create({
 });
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    navigation.navigate('Backrooms');
-  };
-
-  const navigateToRegister = () => {
-    navigation.navigate('Register');
+    // TODO: real login
+    router.navigate('/backrooms');
   };
 
   return (
@@ -101,7 +98,10 @@ export default function LoginScreen() {
 
         <Button title="Login" onPress={handleLogin} />
 
-        <Pressable style={styles.smallLink} onPress={navigateToRegister}>
+        <Pressable
+          style={styles.smallLink}
+          onPress={() => router.navigate('/register')}
+        >
           <Text style={styles.createAccount}>Create account</Text>
         </Pressable>
       </View>

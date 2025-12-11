@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
 });
 
 export default function RegisterScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -108,7 +108,7 @@ export default function RegisterScreen() {
 
       if (response.ok) {
         //TODO save token before going into backrooms
-        navigation.navigate('Backrooms');
+        router.navigate('/backrooms');
       } else {
         const backendError =
           data.message || JSON.stringify(data) || 'Registration failed';
@@ -120,10 +120,6 @@ export default function RegisterScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const navigateToLogin = () => {
-    navigation.navigate('Login');
   };
 
   return (
@@ -185,7 +181,10 @@ export default function RegisterScreen() {
           disabled={isLoading}
         />
 
-        <Text style={styles.smallLink} onPress={navigateToLogin}>
+        <Text
+          style={styles.smallLink}
+          onPress={() => router.navigate('/login')}
+        >
           Already have an account? Login
         </Text>
       </View>

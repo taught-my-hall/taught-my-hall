@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Brain, Pencil, Plus, Sparkles } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -30,14 +30,14 @@ PalaceCard.propTypes = {
 };
 
 export default function PalaceList() {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Add new Palace</Text>
 
       <PalaceCard
-        onPress={() => navigation.navigate('PalaceCreator')}
+        onPress={() => router.navigate('/palace/create')}
         title="Create new palace"
         icon={Pencil}
         iconColor="#FFF"
@@ -47,7 +47,7 @@ export default function PalaceList() {
 
       <View style={styles.listContainer}>
         <PalaceCard
-          onPress={() => navigation.navigate('PalaceCreator')}
+          onPress={() => router.navigate('/palace/create')}
           title="Machine learning Palace"
           icon={Brain}
           iconColor="#9333EA" // Purple-600
@@ -55,7 +55,7 @@ export default function PalaceList() {
         />
 
         <PalaceCard
-          onPress={() => navigation.navigate('PalaceCreator')}
+          onPress={() => router.navigate('/palace/create')}
           title="Machine learning Palace"
           icon={Sparkles}
           iconColor="#22D3EE" // Cyan-400

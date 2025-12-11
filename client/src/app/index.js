@@ -1,25 +1,28 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Button, Text, View } from 'react-native';
 import stylesMain from '../styles/stylesMain';
 
 export default function HomeScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/rooms/')
-      .then(response => response.json())
-      .then(data => {
-        setRooms(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching rooms:', error);
-        setLoading(false);
-      });
+    // TODO
+    // fetch('http://127.0.0.1:8000/api/rooms/')
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     console.log(data);
+    //     setRooms(data);
+    //     setLoading(false);
+    //   })
+    //   .catch(error => {
+    //     console.error('Error fetching rooms:', error);
+    //     setLoading(false);
+    //   });
+    setLoading(false);
   }, []);
 
   return (
@@ -35,7 +38,7 @@ export default function HomeScreen() {
           </Text>
         ))}
 
-      <Button title="Login" onPress={() => navigation.navigate('Login')} />
+      <Button title="Login" onPress={() => router.navigate('/login')} />
     </View>
   );
 }
