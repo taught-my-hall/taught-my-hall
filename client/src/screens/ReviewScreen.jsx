@@ -30,9 +30,7 @@ const fetchQuestions = async () => {
 const fakeValidate = async (questionId, knows) => {
   return new Promise(resolve => {
     setTimeout(() => {
-      console.log(
-        `Validated question ${questionId}: ${knows ? 'knows' : 'dont know'}`
-      );
+      //TODO validate answer
       resolve({ success: true });
     }, 1000);
   });

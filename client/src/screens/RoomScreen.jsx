@@ -248,9 +248,7 @@ export default function RoomScreen() {
     [null, 'chairFront', null, null, null],
   ];
 
-  const furnitureClick = (row, col) => {
-    console.log(`Furniture clicked at row ${row} | col ${col}`);
-  };
+  const furnitureClick = (row, col) => {};
 
   return (
     <GestureHandlerRootView
