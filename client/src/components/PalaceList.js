@@ -1,15 +1,16 @@
-import { Brain, Pencil, Plus, Sparkles } from 'lucide-react'; // Changed from lucide-react-native
+import { useNavigation } from '@react-navigation/native';
+import { Brain, Pencil, Plus, Sparkles } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const PalaceCard = ({ title, icon: Icon, iconColor, borderColor }) => (
+const PalaceCard = ({ title, icon: Icon, iconColor, borderColor, onPress }) => (
   <TouchableOpacity
+    onPress={onPress}
     activeOpacity={0.8}
     style={[styles.card, { borderColor: borderColor }]}
   >
     <View style={styles.cardContent}>
       <View style={styles.iconWrapper}>
-        {/* lucide-react accepts size and color props just like the native version */}
         <Icon size={24} color={iconColor} />
       </View>
       <Text style={styles.cardText}>{title}</Text>
@@ -21,6 +22,7 @@ const PalaceCard = ({ title, icon: Icon, iconColor, borderColor }) => (
 );
 
 PalaceCard.propTypes = {
+  onPress: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
   icon: PropTypes.elementType.isRequired,
   iconColor: PropTypes.string,
@@ -28,31 +30,32 @@ PalaceCard.propTypes = {
 };
 
 export default function PalaceList() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Add new Palace</Text>
 
       <PalaceCard
+        onPress={() => navigation.navigate('PalaceCreator')}
         title="Create new palace"
         icon={Pencil}
         iconColor="#FFF"
         borderColor="#FFF"
       />
-      {/* Section Header */}
       <Text style={styles.sectionHeader}>Official Premade palaces</Text>
 
-      {/* List Items */}
       <View style={styles.listContainer}>
-        {/* Item 1: Purple */}
         <PalaceCard
+          onPress={() => console.log('Yet to be added')}
           title="Machine learning Palace"
           icon={Brain}
           iconColor="#9333EA" // Purple-600
           borderColor="#7E22CE" // Purple-700
         />
 
-        {/* Item 2: Cyan */}
         <PalaceCard
+          onPress={() => console.log('Yet to be added')}
           title="Machine learning Palace"
           icon={Sparkles}
           iconColor="#22D3EE" // Cyan-400

@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 
 from django.utils import timezone
@@ -28,14 +28,28 @@ class RoomViewSet(viewsets.ModelViewSet):
     DELETE /rooms/<id>/
         - Deletes a room.
     """
-    queryset = Room.objects.all()
     serializer_class = RoomSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # return only rooms that belong to the logged-in user
+        user = self.request.user
+        return Room.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        # always set user to request.user
+        serializer.save(user=self.request.user)
+
 
     @action(detail=True, methods=["get"])
     def furniture(self, request, pk=None):
-        """GET /rooms/<id>/furniture/"""
+        """GET /rooms/<id>/furniture/ — allowed only if room belongs to user"""
         room = self.get_object()
+
+        # SECURITY CHECK
+        if room.user != request.user:
+            return Response({"error": "Not allowed"}, status=403)
+
         items = room.furniture.all()
         return Response(FurnitureSerializer(items, many=True).data)
 
@@ -57,18 +71,32 @@ class FurnitureViewSet(viewsets.ModelViewSet):
     DELETE /furniture/<id>/
         - Deletes a furniture item.
     """
-    queryset = Furniture.objects.all()
+    
     serializer_class = FurnitureSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Return only furniture owned by the logged-in user
+        return Furniture.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Force user = request.user so no one can create furniture for someone else
+        serializer.save(user=self.request.user)
+   
 
     @action(detail=True, methods=["post"])
     def add_flashcard(self, request, pk=None):
         """
         POST /furniture/<id>/add_flashcard/
+        Adds flashcard ONLY if furniture belongs to request.user
         """
         furniture = self.get_object()
-        serializer = FlashcardSerializer(data=request.data)
 
+        # SECURITY CHECK
+        if furniture.user != request.user:
+            return Response({"error": "Not allowed"}, status=403)
+
+        serializer = FlashcardSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(
                 furniture=furniture,
@@ -77,6 +105,7 @@ class FurnitureViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
+
 
 
 class FlashcardViewSet(viewsets.ModelViewSet):
@@ -96,22 +125,44 @@ class FlashcardViewSet(viewsets.ModelViewSet):
     DELETE /flashcards/<id>/
         - Deletes a flashcard.
     """
-    queryset = Flashcard.objects.all()
     serializer_class = FlashcardSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only return flashcards belonging to the logged-in user
+        return Flashcard.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically assign user to flashcard
+        serializer.save(user=self.request.user)
+
 
     @action(detail=True, methods=["post"])
     def review(self, request, pk=None):
         """
         POST /flashcards/<id>/review/
-        body = {"grade": int 0-5}
+        Body: {"grade": 0–5}
         """
         card = self.get_object()
+        
+        # USER FILTER ENFORCEMENT
+        if card.user != request.user:
+            return Response({"error": "Not allowed"}, status=403)
+            
+        # Validate input
         grade = request.data.get("grade")
+        if grade is None:
+            return Response({"error": "grade is required"}, status=400)
 
-        if grade is None or not (0 <= int(grade) <= 5):
-            return Response({"error": "grade must be 0-5"}, status=400)
+        try:
+            grade = int(grade)
+        except ValueError:
+            return Response({"error": "grade must be an integer"}, status=400)
 
+        if not (0 <= grade <= 5):
+            return Response({"error": "grade must be between 0 and 5"}, status=400)
+
+        # Prepare card data for SM2
         card_data = {
             "id": card.id,
             "interval": card.interval,
@@ -120,30 +171,38 @@ class FlashcardViewSet(viewsets.ModelViewSet):
             "next_review": card.next_review,
         }
 
-        updated = apply_sm2(card_data, int(grade))
+        updated = apply_sm2(card_data, grade)
 
-        # Save updated SM-2 fields
+        from datetime import datetime
+        iso_value = updated["next_review"]
+        next_review_dt = datetime.fromisoformat(iso_value.replace("Z", "+00:00"))
+
+        # Save updated values
         card.interval = updated["interval"]
         card.ease_factor = updated["ease_factor"]
         card.repetition = updated["repetition"]
-        card.next_review = updated["next_review"]
+        card.next_review = next_review_dt
         card.save()
 
-        return Response(FlashcardSerializer(card).data)
+        return Response({
+            "message": "Review updated successfully",
+            "flashcard": FlashcardSerializer(card).data
+        }, status=200)
 
     @action(detail=False, methods=["get"])
     def queue(self, request):
         """
         GET /flashcards/queue/
         Optional: ?furnitureId=1
+        Returns only flashcards belonging to the logged-in user.
         """
         furniture_id = request.query_params.get("furnitureId")
         now = timezone.now()
+        
+        cards = Flashcard.objects.filter(user=request.user)
 
         if furniture_id:
-            cards = Flashcard.objects.filter(furniture_id=furniture_id)
-        else:
-            cards = Flashcard.objects.all()
+            cards = cards.filter(furniture_id=furniture_id)
 
         due_cards = cards.filter(next_review__lte=now)
 
