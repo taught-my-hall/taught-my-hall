@@ -66,7 +66,12 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setErrorMessage('');
 
-    if (!name || !email || !password || !repeatPassword) {
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !repeatPassword.trim()
+    ) {
       setErrorMessage('Please fill in all fields');
       return;
     }
@@ -89,14 +94,20 @@ export default function RegisterScreen() {
           name: name,
           email: email,
           password: password,
-          password_confirmation: repeatPassword, // Common convention for registration APIs
         }),
       });
 
-      const data = await response.json();
+      let data;
+
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // fallback if response isn't JSON
+        data = { message: await response.text() };
+      }
 
       if (response.ok) {
-        console.log('Registration Success:', data);
+        //TODO save token before going into backrooms
         navigation.navigate('Backrooms');
       } else {
         const backendError =
@@ -105,7 +116,7 @@ export default function RegisterScreen() {
       }
     } catch (error) {
       console.error(error);
-      setErrorMessage('Network request failed. Is the server running?');
+      setErrorMessage(`Network request failed: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
