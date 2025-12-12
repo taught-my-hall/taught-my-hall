@@ -3,15 +3,13 @@ import { memo, useMemo } from 'react';
 import { Group } from 'react-konva';
 import Furniture from './Furniture';
 import TexturePolygon from './TexturedPolygon';
-// --- CONSTANTS ---
+
 const h = 6;
 const r = 5;
 const doorRadius = 25;
 const br_lower = 0.5;
 const br_higher = 1.5;
 
-// --- GENERATOR FUNCTION (Moved outside) ---
-// This function takes 's' and generates the geometry.
 const getWallData = s => ({
   0: [
     [
@@ -203,9 +201,7 @@ const getWallData = s => ({
   ],
 });
 
-const PalaceTile = ({ tileData, i, j, s, flags }) => {
-  // Use useMemo here so we don't recalculate the wall geometry
-  // on every render, but we still have access to 's'.
+const PalaceTile = ({ tileData, i, j, s, flags, imageMap }) => {
   const wallData = useMemo(() => getWallData(s), [s]);
 
   return (
@@ -218,18 +214,21 @@ const PalaceTile = ({ tileData, i, j, s, flags }) => {
           [s + 1, s + 1],
           [0, s + 1],
         ]}
-        textureId={tileData[0] === '0' ? 'stone1' : 'planks1'}
+        image={tileData[0] === '0' ? imageMap.stone1 : imageMap.planks1}
         lineWidth={0}
       />
 
       {tileData[1] !== '' && (
-        <Furniture modelname={tileData[1]} offset={[0, 0]} scale={0.5} />
+        <Furniture
+          modelname={tileData[1]}
+          image={imageMap.furnitureSheet}
+          tileSize={s}
+        />
       )}
 
       {flags.map((b, idx) => {
         let polygons = [];
 
-        // Cardinal directions (Top, Right, Bottom, Left)
         if (idx % 2 === 0 && b) {
           const data = wallData[idx];
           if (data) {
@@ -238,15 +237,13 @@ const PalaceTile = ({ tileData, i, j, s, flags }) => {
                 <TexturePolygon
                   key={`${i}-${j}-${idx}-${di}`}
                   points={dv[0]}
-                  textureId={'brick1'}
+                  image={imageMap.brick1}
                   brightness={dv[1]}
                 />
               );
             });
           }
-        }
-        // Corner logic
-        else {
+        } else {
           const idx_b = (idx + 7) % 8;
           const idx_f = (idx + 9) % 8;
 
@@ -260,7 +257,7 @@ const PalaceTile = ({ tileData, i, j, s, flags }) => {
                 <TexturePolygon
                   key={`${i}-${j}-${idx}-${di}`}
                   points={dv[0]}
-                  textureId={'brick1'}
+                  image={imageMap.brick1}
                   brightness={dv[1]}
                 />
               );
@@ -281,7 +278,7 @@ const PalaceTile = ({ tileData, i, j, s, flags }) => {
             [s / 2 + doorRadius, r + h],
             [s / 2 - doorRadius, r + h],
           ]}
-          textureId={tileData[0] === '0' ? 'stone1' : 'planks1'}
+          image={tileData[0] === '0' ? imageMap.stone1 : imageMap.planks1}
           lineWidth={0}
         />
       )}
@@ -295,15 +292,16 @@ PalaceTile.propTypes = {
   j: PropTypes.number.isRequired,
   s: PropTypes.number.isRequired,
   flags: PropTypes.arrayOf(PropTypes.bool).isRequired,
+  imageMap: PropTypes.object.isRequired,
 };
-// Check props for equality to prevent re-renders
+
 const arePropsEqual = (prevProps, nextProps) => {
   return (
+    prevProps.imageMap === nextProps.imageMap &&
     prevProps.i === nextProps.i &&
     prevProps.j === nextProps.j &&
     prevProps.s === nextProps.s &&
     prevProps.tileData === nextProps.tileData &&
-    // Efficiently compare the boolean flags array
     prevProps.flags.length === nextProps.flags.length &&
     prevProps.flags.every((val, index) => val === nextProps.flags[index])
   );

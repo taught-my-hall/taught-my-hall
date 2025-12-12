@@ -1,33 +1,47 @@
-import { Group } from 'react-konva';
-import models from '../utils/furnitureModels';
-import TexturePolygon from './TexturedPolygon';
+import PropTypes from 'prop-types';
+import { memo } from 'react';
+import { Image } from 'react-konva';
+import { FURNITURE_MAP } from '../utils/furnitureMap';
 
-export default function Furniture({
-  // eslint-disable-next-line
-  modelname,
-  // eslint-disable-next-line
-  offset = [0, 0],
-  // eslint-disable-next-line
-  scale = 1,
-}) {
-  const [offsetX, offsetY] = offset;
+const Furniture = ({ modelname, image, tileSize }) => {
+  const cleanName = modelname.replace(/[0-9_]/g, '');
+  const sprite = FURNITURE_MAP[cleanName] || FURNITURE_MAP[modelname];
+
+  if (!sprite || !image) return null;
+
+  const maxSide = Math.max(sprite.w, sprite.h);
+  const targetSize = tileSize * 0.9;
+  const scale = targetSize / maxSide;
+
+  const finalWidth = sprite.w * scale;
+  const finalHeight = sprite.h * scale;
+
+  const centeredX = (tileSize - finalWidth) / 2;
+  const centeredY = (tileSize - finalHeight) / 2;
 
   return (
-    <Group x={offsetX} y={offsetY} scaleX={scale} scaleY={scale}>
-      {models[modelname].map((cuboid, cuboidIndex) =>
-        cuboid.map((poly, polyIndex) => {
-          const offsetPoints = poly.points.map(([x, y]) => [x, y]);
-
-          return (
-            <TexturePolygon
-              key={`${cuboidIndex}-${polyIndex}`}
-              points={offsetPoints}
-              textureId={poly.textureId}
-              angle={poly.angle}
-            />
-          );
-        })
-      )}
-    </Group>
+    <Image
+      image={image}
+      crop={{
+        x: sprite.x,
+        y: sprite.y,
+        width: sprite.w,
+        height: sprite.h,
+      }}
+      width={finalWidth}
+      height={finalHeight}
+      x={centeredX}
+      y={centeredY}
+      listening={false}
+      perfectDrawEnabled={false}
+    />
   );
-}
+};
+
+Furniture.propTypes = {
+  modelname: PropTypes.string.isRequired,
+  image: PropTypes.object,
+  tileSize: PropTypes.number,
+};
+
+export default memo(Furniture);

@@ -1,62 +1,74 @@
+import PropTypes from 'prop-types';
+import { memo } from 'react';
 import { Shape } from 'react-konva';
-import useImage from 'use-image';
-import { textures } from '../utils/textures.js';
 
-export default function TexturePolygon({
-  // eslint-disable-next-line
+const TexturePolygon = ({
   points,
-  // eslint-disable-next-line
-  textureId,
-  // eslint-disable-next-line
-  angle,
-  // eslint-disable-next-line
-  width = 400,
-  // eslint-disable-next-line
-  height = 400,
-  // eslint-disable-next-line
+  image,
+  angle = 0,
   lineWidth = 0.5,
-  // eslint-disable-next-line
   brightness = 1,
-}) {
-  const [image] = useImage(textures[textureId]);
-
-  if (!image) {
-    return null;
-  }
+}) => {
+  if (!image) return null;
 
   return (
     <Shape
-      sceneFunc={(ctx, shape) => {
-        const [firstX, firstY] = points[0];
+      perfectDrawEnabled={false}
+      shadowForStrokeEnabled={false}
+      listening={false}
+      sceneFunc={ctx => {
+        if (!points || points.length === 0) return;
+
         ctx.beginPath();
+        const [firstX, firstY] = points[0];
         ctx.moveTo(firstX, firstY);
-        // eslint-disable-next-line
         for (let i = 1; i < points.length; i++) {
           const [x, y] = points[i];
           ctx.lineTo(x, y);
         }
         ctx.closePath();
 
-        ctx.filter = `brightness(${brightness})`;
-
         const pattern = ctx.createPattern(image, 'repeat');
 
-        let new_angle = ((angle / Math.PI) * 360 + 360) % 360;
-        ctx.rotate(new_angle);
+        if (angle) {
+          ctx.save();
+          ctx.rotate(((angle / Math.PI) * 360 + 360) % 360);
+        }
 
         ctx.fillStyle = pattern;
         ctx.fill();
+
+        if (angle) ctx.restore();
+
+        if (brightness !== 1) {
+          ctx.save();
+          if (brightness < 1) {
+            ctx.fillStyle = 'black';
+            ctx.globalAlpha = 1 - brightness;
+          } else {
+            ctx.fillStyle = 'white';
+            ctx.globalAlpha = brightness - 1;
+          }
+          ctx.fill();
+          ctx.restore();
+        }
 
         if (lineWidth > 0) {
           ctx.strokeStyle = '#bcb3ae24';
           ctx.lineWidth = lineWidth;
           ctx.stroke();
         }
-
-        ctx.strokeShape(shape);
-
-        ctx.filter = 'none';
       }}
     />
   );
-}
+};
+
+TexturePolygon.propTypes = {
+  points: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)).isRequired,
+  image: PropTypes.object, // DOM Image object
+  angle: PropTypes.number,
+  lineWidth: PropTypes.number,
+  brightness: PropTypes.number,
+};
+
+export default memo(TexturePolygon);
