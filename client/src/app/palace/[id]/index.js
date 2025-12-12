@@ -1,6 +1,13 @@
+import { useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
-import { Dimensions, Platform, StyleSheet } from 'react-native';
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {
   Gesture,
   GestureDetector,
@@ -112,6 +119,7 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 };
 
 function PalaceScreen() {
+  const router = useRouter();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -455,6 +463,12 @@ function PalaceScreen() {
           </Animated.View>
         </Animated.View>
       </GestureDetector>
+      <Pressable
+        onPress={() => router.navigate('/room/TODO/review')}
+        style={style.reviewButton}
+      >
+        <Text style={style.reviewButtonText}>Review</Text>
+      </Pressable>
       <Vignette isOpened={isFurnitureOpen}>
         <FurnitureScreen />
       </Vignette>
@@ -480,6 +494,21 @@ const style = StyleSheet.create({
     width: MAP_WIDTH * TILE_SIZE,
     backgroundColor: '#4a90e2',
   },
+  reviewButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 50,
+    width: 200,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+    borderColor: '#FFF',
+    borderWidth: 2,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 200, // Ensure button is above vignette
+  },
+  reviewButtonText: { fontSize: 24, color: '#FFF' },
 });
 
 export default memo(PalaceScreen);
