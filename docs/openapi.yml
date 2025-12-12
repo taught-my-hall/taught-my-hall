@@ -1,0 +1,891 @@
+openapi: '3.1.1'
+
+info:
+  title: TaughtMyHall API
+  version: '0.1.1'
+
+servers:
+  - description: Development
+    url: http://127.0.0.1:8000/api
+
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Palaces
+    description: Palace management
+  - name: Rooms
+    description: Room management within palaces
+  - name: Furniture
+    description: Furniture management within rooms
+  - name: Flashcards
+    description: Flashcard management and spaced repetition
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new user
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - name
+                - password
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 255
+                  format: email
+                  example: john.doe@example.com
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: John Doe
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 128
+                  example: "SomeSuperStrongPassword123#"
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NjY4OTY5LCJpYXQiOjE3NjU0NTkzNjksImp0aSI6ImMwYzk5YjM4NTMyOTQyYjRhODZlNWM1YzQ2NDhkZTZhIiwidXNlcl9pZCI6IjIifQ.xb2Pyve53ut3Iro8HrDW_bILFtmjokRaez_76oTZ5to
+
+          description: User registered successfully
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '409':
+          description: Some user with these credentials already exists
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                    example: User with that email already exists
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /auth/login:
+    post:
+      summary: Log in to your account
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - password
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SomeSuperStrongPassword123#
+
+      responses:
+        '200':
+          description: Successfully login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NjY5MTEyLCJpYXQiOjE3NjU0NTk1MTIsImp0aSI6IjM0NmEwOGE4OTE2YzQxZTU5ZWZhZTVmY2YyMmJhMjQ2IiwidXNlcl9pZCI6IjIifQ.CHE5lOQRPw6r09sQcAgfFgGVE93Ty_JVHWs2m9673CM
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          description: Bad credentials
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                    example: Bad credentials
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /palaces:
+    get:
+      summary: Lists all current user's palaces
+      tags:
+        - Palaces
+      responses:
+        '200':
+          description: Successfully listed all user's palaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Palace"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+          
+    post:
+      summary: Creates new palace
+      tags:
+        - Palaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Palace/properties/name"
+      responses:
+        '201':
+          description: Successfully created new palace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Palace"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /palaces/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Gets palace
+      tags:
+        - Palaces
+      responses:
+        '200':
+          description: Successfully got palace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Palace"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+          
+    put:
+      summary: Updates palace
+      tags:
+        - Palaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Palace/properties/name"
+      responses:
+        '200':
+          description: Successfully updated palace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Palace"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+          
+    delete:
+      summary: Deletes palace and all related data
+      tags:
+        - Palaces
+      description: |
+        Deletes a palace and all data related to it.
+        That means it deletes all rooms inside of that palace, 
+        all furniture inside of these rooms and all flashcards of these furniture.
+      responses:
+        '204':
+          $ref: "#/components/responses/DeletedSuccessfully"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+  /palaces/{palaceId}/rooms:
+    parameters:
+      - name: palaceId
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: List all rooms inside palace
+      tags:
+        - Rooms
+      responses:
+        '200':
+          description: Successfully listed rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    post:
+      summary: Creates new room inside palace
+      tags:
+        - Rooms
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - theme_color
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Room/properties/name"
+                theme_color:
+                  $ref: "#/components/schemas/Room/properties/theme_color"
+      responses:
+        '201':
+          description: Successfully created room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /rooms/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Gets room
+      tags:
+        - Rooms
+      responses:
+        '200':
+          description: Successfully got room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      summary: Updates room
+      tags:
+        - Rooms
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Room/properties/name"
+                theme_color:
+                  $ref: "#/components/schemas/Room/properties/theme_color"
+      responses:
+        '200':
+          description: Successfully updated room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+    delete:
+      summary: Deletes room and all related data
+      tags:
+        - Rooms
+      description: |
+        Deletes a room and all data related to it.
+        That means it deletes all furniture inside of the room and all flashcards inside of these furniture.
+      responses:
+        '204':
+          $ref: "#/components/responses/DeletedSuccessfully"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+  /rooms/{roomId}/furniture:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Lists all furniture inside room
+      tags:
+        - Furniture
+      responses:
+        '200':
+          description: Successfully listed furniture
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Furniture"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    post:
+      summary: Creates new furniture inside room
+      tags:
+        - Furniture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - description
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Furniture/properties/name"
+                description:
+                  $ref: "#/components/schemas/Furniture/properties/description"
+      responses:
+        '201':
+          description: Successfully created furniture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Furniture"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /furniture/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Gets furniture
+      tags:
+        - Furniture
+      responses:
+        '200':
+          description: Successfully got furniture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Furniture"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      summary: Updates furniture
+      tags:
+        - Furniture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: "#/components/schemas/Furniture/properties/name"
+                description:
+                  $ref: "#/components/schemas/Furniture/properties/description"
+      responses:
+        '200':
+          description: Successfully updated furniture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Furniture"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+    delete:
+      summary: Deletes furniture and all related data
+      tags:
+        - Furniture
+      description: |
+        Deletes furniture and all flashcards inside of it.
+      responses:
+        '204':
+          $ref: "#/components/responses/DeletedSuccessfully"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+  /furniture/{furnitureId}/flashcards:
+    parameters:
+      - name: furnitureId
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Lists all flashcards inside furniture
+      tags:
+        - Flashcards
+      responses:
+        '200':
+          description: Successfully listed flashcards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flashcard"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    post:
+      summary: Creates new flashcard inside furniture
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - front
+                - back
+                - furniture_slot_index
+              properties:
+                front:
+                  $ref: "#/components/schemas/Flashcard/properties/front"
+                back:
+                  $ref: "#/components/schemas/Flashcard/properties/back"
+                furniture_slot_index:
+                  $ref: "#/components/schemas/Flashcard/properties/furniture_slot_index"
+      responses:
+        '201':
+          description: Successfully created flashcard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flashcard"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+  /flashcards:
+    get:
+      summary: Lists all user's flashcards
+      tags:
+        - Flashcards
+      parameters:
+        - in: query
+          name: onlyInReview
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: If true, lists only flashcards that should be reviewed, that means have next review time before now.
+      responses:
+        '200':
+          description: Successfully listed flashcards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flashcard"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /flashcards/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      summary: Gets flashcard
+      tags:
+        - Flashcards
+      responses:
+        '200':
+          description: Successfully got flashcard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flashcard"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      summary: Updates flashcard
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                front:
+                  $ref: "#/components/schemas/Flashcard/properties/front"
+                back:
+                  $ref: "#/components/schemas/Flashcard/properties/back"
+                furniture_slot_index:
+                  $ref: "#/components/schemas/Flashcard/properties/furniture_slot_index"
+      responses:
+        '200':
+          description: Successfully updated flashcard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flashcard"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+    delete:
+      summary: Deletes flashcard
+      tags:
+        - Flashcards
+      responses:
+        '204':
+          $ref: "#/components/responses/DeletedSuccessfully"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+
+  /flashcards/{id}/review:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    put:
+      summary: Updates flashcard ease level using knowledge retention algorithm
+      tags:
+        - Flashcards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - grade
+              properties:
+                grade:
+                  description: User's subjective familiarity with the flashcard. 0 = doesn't know at all, 5 = knows perfectly
+                  minimum: 0
+                  maximum: 5
+                  type: integer
+      responses:
+        '200':
+          description: Successfully updated flashcard knowledge retention
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flashcard"
+        '400':
+          $ref: "#/components/responses/InvalidDataError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
+        '422':
+          $ref: "#/components/responses/ValidationFailedError"
+
+
+components:
+  schemas:
+    Palace:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Palace of History
+          minLength: 1
+          maxLength: 80
+        # TODO: maybe in the future
+        # rooms:
+        #   description: Optionally preloaded rooms
+        #   type: [array, 'null']
+        #   example: null
+        #   items:
+        #     $ref: "#/components/schemas/Room"
+
+    Room:
+      type: object
+      required:
+        - id
+        - name
+        - theme_color
+      properties:
+        id:
+          type: integer
+          example: 1
+        name: 
+          type: string
+          example: World War II Room
+          minLength: 1
+          maxLength: 80
+        theme_color:
+          description: Theme color used around the room, e.g. in rooms arranger screen
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+          example: "#f8a000"
+        # TODO: maybe in the future
+        # furniture:
+        #   description: Optionally preloaded furniture
+        #   type: [array, 'null']
+        #   example: null
+        #   items:
+        #     $ref: "#/components/schemas/Furniture"
+
+    Furniture:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: January Uprising
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          example: It all happend in Poland after...
+          minLength: 0
+          maxLength: 500
+        # TODO: maybe in the future
+        # flashcards:
+        #   description: Optionally preloaded flashcards
+        #   type: [array, 'null']
+        #   example: null
+        #   items:
+        #     $ref: "#/components/schemas/Flashcard"
+
+    Flashcard:
+      type: object
+      description: Doesn't have to expose all database fields like `ease_factor` or `repetition` because frontend doesn't take it into account.
+      required:
+        - id
+        - front
+        - back
+        - furniture_slot_index
+      properties:
+        id:
+          type: integer
+          example: 1
+        front:
+          description: Flashcard question
+          type: string
+          minLength: 1
+          maxLength: 2000
+          example: What is the capital of France?
+        back:
+          description: Flashcard answer
+          type: string
+          minLength: 1
+          maxLength: 2000
+          example: Paris
+        # interval:
+        #   type: integer
+        #   example: 1
+        # ease_factor:
+        #   type: number
+        #   example: 2.5
+        # repetition:
+        #   type: integer
+        #   example: 1
+        # next_review:
+        #   type: string
+        #   format: date-time
+        #   example: 2025-12-06 10:09:56.211617+00
+        furniture_slot_index:
+          description: Index of placement inside furniture
+          type: integer
+          minimum: 0
+          maximum: 8
+          example: 3
+        
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login or /auth/register
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Access token is missing or invalid
+
+    InvalidDataError:
+      description: Invalid input data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Invalid input data
+    
+    NotFoundError:
+      description: Resource not found or doesn't belong to the current user
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource not found
+    
+    ValidationFailedError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+                example:
+                  name: ["cannot be blank"]
+
+    DeletedSuccessfully:
+      description: Successfully deleted resource
+
+security:
+  - BearerAuth: []
