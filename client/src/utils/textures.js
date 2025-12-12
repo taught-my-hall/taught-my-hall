@@ -18,4 +18,7 @@ export const textures = {
   planks1: isWeb
     ? '/textures/planks1.png'
     : require('../../public/textures/planks1.png'),
+  furniture: isWeb
+    ? '/textures/furniture.png'
+    : require('../../public/textures/furniture.png'),
 };
