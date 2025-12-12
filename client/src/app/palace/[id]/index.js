@@ -10,7 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import PalaceTile from '../../../components/PalaceTile';
+import PalaceTile from '../../../components/palaceTile';
 
 const { width, height } = Dimensions.get('window');
 
