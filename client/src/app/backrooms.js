@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
@@ -13,7 +13,7 @@ import {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import BackroomLines from '../components/BackroomLines.js';
+import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
 
@@ -21,7 +21,7 @@ const { width, height } = Dimensions.get('window');
 const svgWidth = width * 3;
 
 export default function BackroomScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const isNewPalaceOpen = useSharedValue(false);
   const [rooms, setRooms] = useState([
     { title: 'Create new room' },
@@ -64,10 +64,6 @@ export default function BackroomScreen() {
     animateMove(1);
   };
 
-  const handleRoomEnter = () => {
-    navigation.navigate('Palace');
-  };
-
   const vignetteAnimatedStyle = useAnimatedStyle(() => {
     return {
       opacity: withTiming(isNewPalaceOpen.value ? 1 : 0, { duration: 300 }),
@@ -93,7 +89,9 @@ export default function BackroomScreen() {
                 pointerEvents="box-none"
               >
                 <BackroomLines
-                  onPress={handleRoomEnter}
+                  onPress={() => {
+                    router.navigate('/palace/TODO');
+                  }}
                   i={i}
                   p={p}
                   total={rooms.length}

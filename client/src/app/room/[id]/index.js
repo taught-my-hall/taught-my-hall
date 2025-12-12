@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
@@ -19,10 +19,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import Furniture from '../components/Furniture';
-import TexturePolygon from '../components/TexturedPolygon';
-import Vignette from '../components/Vignette';
-import FurnitureScreen from './FurnitureScreen';
+import Furniture from '../../../components/Furniture';
+import TexturePolygon from '../../../components/TexturedPolygon';
+import Vignette from '../../../components/Vignette';
+import FurnitureScreen from '../../furniture';
 
 //Room settings
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -39,7 +39,7 @@ const MAX_SCALE = 4.5;
 const BASE_CENTERING_SPEED = 0.5;
 
 export default function RoomScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
@@ -322,7 +322,7 @@ export default function RoomScreen() {
         <FurnitureScreen />
       </Vignette>
       <Pressable
-        onPress={() => navigation.navigate('Review')}
+        onPress={() => router.navigate('/room/TODO/review')}
         style={style.reviewButton}
       >
         <Text style={{ fontSize: 24, color: '#FFF' }}>Review</Text>

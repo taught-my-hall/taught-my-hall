@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
 import { memo, useCallback, useMemo } from 'react';
 import { Layer, Stage } from 'react-konva';
 import { Dimensions, Platform, StyleSheet } from 'react-native';
@@ -11,7 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import PalaceTile from '../components/palaceTile';
+import PalaceTile from '../../../components/palaceTile';
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,8 +73,6 @@ const MAP_WIDTH = SPLIT_MAP[0].length;
 const TILE_SIZE = 100;
 
 function PalaceScreen() {
-  const navigation = useNavigation();
-
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
