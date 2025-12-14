@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {loginUser} from "../../../services/auth";
 
 const styles = StyleSheet.create({
   container: {
@@ -57,17 +58,48 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignSelf: 'center',
   },
+  demoButton: {
+    backgroundColor: '#000',
+    borderWidth: 1,
+    marginTop: 16,
+    borderColor: 'red',
+    height: 40,
+    justifyContent:"center",
+    alignItems:"center",
+  },
+  demoButtonText: {
+    color: '#fff',
+  }
 });
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
+  const [inputEmail, setInputEmail] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
 
-  const handleLogin = () => {
-    // TODO: real login
-    router.navigate('/backrooms');
+
+  const handleLogin = async () => {
+    await executeLogin(inputEmail, inputPassword);
   };
+
+  const handleDemoLogin = async () => {
+    await executeLogin("demo@example.com", "pass1234")
+  }
+
+  const executeLogin = async (login, password) => {
+    try {
+      const data = await loginUser(login, password);
+
+      const token = data.token;
+
+      localStorage.setItem('authToken', token);
+
+      router.navigate('/backrooms');
+
+    } catch (error) {
+      console.error("Network or Login error:", error);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -78,8 +110,8 @@ export default function LoginScreen() {
           <Text style={styles.label}>Login</Text>
           <TextInput
             style={styles.input}
-            onChangeText={setLogin}
-            value={login}
+            onChangeText={setInputEmail}
+            value={inputEmail}
           />
         </View>
 
@@ -87,8 +119,8 @@ export default function LoginScreen() {
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
-            onChangeText={setPassword}
-            value={password}
+            onChangeText={setInputPassword}
+            value={inputPassword}
             secureTextEntry
           />
         </View>
@@ -97,6 +129,9 @@ export default function LoginScreen() {
         <Text style={styles.smallLink}>Forgot password?</Text>
 
         <Button title="Login" onPress={handleLogin} />
+        <Pressable style={styles.demoButton} onPress={handleDemoLogin}>
+          <Text style={styles.demoButtonText}>Demo Login</Text>
+        </Pressable>
 
         <Pressable
           style={styles.smallLink}

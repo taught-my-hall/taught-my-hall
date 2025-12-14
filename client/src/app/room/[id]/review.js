@@ -2,28 +2,11 @@ import { useQueue } from '@uidotdev/usehooks';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {fetchQuestions} from "../../../../services/palaceData";
 
 let questionIdCounter = 1;
 
-// Simulates fetching new questions. Should be
-// called when less than 5 questions are left in the buffer
-const fetchQuestions = async () => {
-  try {
-    const response = await fetch('http://127.0.0.1:8000/api/furniture/1/');
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // data.flashcards to tablica fiszek
-    return { questions: data.flashcards };
-  } catch (error) {
-    console.error('Error fetching flashcards:', error);
-    return { questions: [] };
-  }
-};
 
 // Simulates telling backend whether user knows or
 // doesn't know the question
@@ -44,32 +27,45 @@ export default function ReviewScreen() {
     size: questionsLength,
   } = useQueue([]);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchMoreQuestions = useCallback(() => {
+  const fetchMoreQuestions = useCallback(async () => {
+    // 1. STOP if we already know there are no more questions
+    if (!hasMore) return;
+
     setIsLoading(true);
     setError('');
 
-    fetchQuestions()
-      .then(res => {
-        for (const question of res.questions) {
+    try {
+      const data = await fetchQuestions();
+
+      if (data.questions && data.questions.length > 0) {
+        for (const question of data.questions) {
           pushQuestion(question);
         }
-      })
-      .catch(_err => {
-        setError('Something went wrong, please try again');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [pushQuestion]);
+      } else {
+        // 2. SERVER EMPTY? Flip the switch so we don't ask again.
+        console.log("No new questions received. Stopping fetch.");
+        setHasMore(false);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong, please try again');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pushQuestion, hasMore]); // <--- Add hasMore to dependencies
 
   useEffect(() => {
-    if (questionsLength < 5) {
-      fetchMoreQuestions();
-    }
-  }, [questionsLength, fetchMoreQuestions]);
+    // 3. Add !hasMore to the guard clause
+    if (isLoading || questionsLength >= 5 || !hasMore) return;
+
+    fetchMoreQuestions();
+
+  }, [questionsLength, fetchMoreQuestions, isLoading, hasMore]);
 
   const handleAnswer = knows => {
     if (!currentQuestion) return;
