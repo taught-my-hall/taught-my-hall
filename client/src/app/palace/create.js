@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import PropTypes from 'prop-types';
 import React, {
   useCallback,
@@ -11,12 +12,14 @@ import {
   Dimensions,
   PanResponder,
   Platform,
+  Pressable,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { setTempPalaceMatrix } from '../../utils/tempData';
 
 const CELL_SIZE = 40;
 const GAP_SIZE = 2;
@@ -44,9 +47,10 @@ const generateRandomColor = () => {
 };
 
 export default function PalaceCreatorScreen() {
-  const [rooms, setRooms] = useState(DEFAULT_ROOMS);
-  const [activeRoomId, setActiveRoomId] = useState('3');
-  const activeRoomIdRef = useRef('3');
+  const router = useRouter();
+  const [rooms, setRooms] = useState([]);
+  const [activeRoomId, setActiveRoomId] = useState('0');
+  const activeRoomIdRef = useRef('0');
   const [selectedCells, setSelectedCells] = useState({});
   const [bounds, setBounds] = useState(INITIAL_BOUNDS);
 
@@ -103,11 +107,10 @@ export default function PalaceCreatorScreen() {
 
   Cell.propTypes = {
     baseColor: PropTypes.string.isRequired,
-    selectedRoomId: PropTypes.string, // distinct from isRequired because it might be undefined/null
+    selectedRoomId: PropTypes.string,
     label: PropTypes.string,
   };
 
-  // 2. Now you can safely add them to the dependency array
   useEffect(() => {
     panVal.current = { x: initialCamX, y: initialCamY };
     const id = pan.addListener(value => {
@@ -119,18 +122,19 @@ export default function PalaceCreatorScreen() {
   const toggleCell = (r, c) => {
     const key = `${r},${c}`;
     const currentActiveId = activeRoomIdRef.current;
+    if (currentActiveId !== '0') {
+      setSelectedCells(prev => {
+        const currentOwnerId = prev[key];
 
-    setSelectedCells(prev => {
-      const currentOwnerId = prev[key];
-
-      if (currentOwnerId === currentActiveId) {
-        const newState = { ...prev };
-        delete newState[key];
-        return newState;
-      } else {
-        return { ...prev, [key]: currentActiveId };
-      }
-    });
+        if (currentOwnerId === currentActiveId) {
+          const newState = { ...prev };
+          delete newState[key];
+          return newState;
+        } else {
+          return { ...prev, [key]: currentActiveId };
+        }
+      });
+    }
   };
 
   const getBaseColor = useCallback(
@@ -270,6 +274,35 @@ export default function PalaceCreatorScreen() {
     default: {},
   });
 
+  const getGridMatrix = () => {
+    let rBoundMin = 100;
+    let rBoundMax = -100;
+    let cBoundMin = 100;
+    let cBoundMax = -100;
+    const places = [];
+    Object.keys(selectedCells).forEach(key => {
+      const val = selectedCells[key];
+      let [r, c] = key.split(',').map(Number);
+      places.push([r, c, val]);
+      if (r < rBoundMin) rBoundMin = r;
+      if (r > rBoundMax) rBoundMax = r;
+      if (c < cBoundMin) cBoundMin = c;
+      if (c > cBoundMax) cBoundMax = c;
+    });
+    if (places.length === 0) return [];
+    const matrix = Array.from(
+      { length: Math.abs(rBoundMax - rBoundMin + 1) },
+      () =>
+        Array.from({ length: Math.abs(cBoundMax - cBoundMin + 1) }, () => '0__')
+    );
+    places.map(place => {
+      let [r, c, v] = place;
+      matrix[r - rBoundMin][c - cBoundMin] = v + '__';
+    });
+    console.log(matrix);
+    return matrix;
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -322,6 +355,17 @@ export default function PalaceCreatorScreen() {
           </View>
         </View>
       </View>
+      <Pressable
+        onPress={() => {
+          if (Object.keys(selectedCells).length > 0) {
+            setTempPalaceMatrix(getGridMatrix());
+            router.navigate('/palace/setup');
+          }
+        }}
+        style={styles.reviewButton}
+      >
+        <Text style={{ fontSize: 24, color: '#FFF' }}>New Palace</Text>
+      </Pressable>
     </View>
   );
 }
@@ -441,4 +485,18 @@ const styles = StyleSheet.create({
     }),
   },
   cellLabel: { fontSize: 8, color: 'rgba(255,255,255,0.5)' },
+  reviewButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 50,
+    width: 200,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+    borderColor: '#FFF',
+    borderWidth: 2,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 200, // Ensure button is above vignette
+  },
 });
