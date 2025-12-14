@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {loginUser} from "../../../services/auth";
+import { loginUser } from '../../../services/auth';
 
 const styles = StyleSheet.create({
   container: {
@@ -64,12 +64,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderColor: 'red',
     height: 40,
-    justifyContent:"center",
-    alignItems:"center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   demoButtonText: {
     color: '#fff',
-  }
+  },
 });
 
 export default function LoginScreen() {
@@ -77,14 +77,13 @@ export default function LoginScreen() {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
 
-
   const handleLogin = async () => {
     await executeLogin(inputEmail, inputPassword);
   };
 
   const handleDemoLogin = async () => {
-    await executeLogin("demo@example.com", "pass1234")
-  }
+    await executeLogin('demo@example.com', 'pass1234');
+  };
 
   const executeLogin = async (login, password) => {
     try {
@@ -95,11 +94,10 @@ export default function LoginScreen() {
       localStorage.setItem('authToken', token);
 
       router.navigate('/backrooms');
-
     } catch (error) {
-      console.error("Network or Login error:", error);
+      console.error('Network or Login error:', error);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>

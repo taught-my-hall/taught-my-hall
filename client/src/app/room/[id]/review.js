@@ -2,11 +2,9 @@ import { useQueue } from '@uidotdev/usehooks';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {fetchQuestions} from "../../../../services/palaceData";
+import { fetchQuestions } from '../../../../services/palaceData';
 
 let questionIdCounter = 1;
-
-
 
 // Simulates telling backend whether user knows or
 // doesn't know the question
@@ -47,10 +45,9 @@ export default function ReviewScreen() {
         }
       } else {
         // 2. SERVER EMPTY? Flip the switch so we don't ask again.
-        console.log("No new questions received. Stopping fetch.");
+        console.log('No new questions received. Stopping fetch.');
         setHasMore(false);
       }
-
     } catch (err) {
       console.error(err);
       setError('Something went wrong, please try again');
@@ -64,7 +61,6 @@ export default function ReviewScreen() {
     if (isLoading || questionsLength >= 5 || !hasMore) return;
 
     fetchMoreQuestions();
-
   }, [questionsLength, fetchMoreQuestions, isLoading, hasMore]);
 
   const handleAnswer = knows => {
