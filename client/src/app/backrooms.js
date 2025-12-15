@@ -8,11 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
@@ -63,12 +59,6 @@ export default function BackroomScreen() {
     if (pointer === rooms.length - 1) return;
     animateMove(1);
   };
-
-  const vignetteAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: withTiming(isNewPalaceOpen.value ? 1 : 0, { duration: 300 }),
-    };
-  });
 
   const openNewPalace = () => {
     isNewPalaceOpen.value = true;
