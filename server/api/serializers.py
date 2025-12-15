@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Room, Furniture, Flashcard
+from .models import UserPalace, PalaceTemplate, Furniture, Flashcard
+import json
+
 
 
 class FlashcardSerializer(serializers.ModelSerializer):
@@ -18,17 +20,48 @@ class FurnitureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Furniture
         fields = [
-            "id", "user", "room", "name", "description",
+            "id", "user", "palace", "name", "description",
             "created_at", "updated_at", "flashcards"
         ]
 
 
-class RoomSerializer(serializers.ModelSerializer):
+class UserPalaceSerializer(serializers.ModelSerializer):
     furniture = FurnitureSerializer(many=True, read_only=True)
+    palace_matrix = serializers.JSONField(required=False)
 
     class Meta:
-        model = Room
+        model = UserPalace
         fields = [
-            "id", "user", "name",
+            "id", "user", "name", "palace_matrix",
             "created_at", "updated_at", "furniture"
         ]
+        read_only_fields = ("id", "created_at", "updated_at", "user")
+
+    def create(self, validated_data):
+        matrix = validated_data.get("palace_matrix")
+        if matrix is not None:
+            validated_data["palace_matrix"] = json.dumps(matrix)
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.palace_matrix:
+            data["palace_matrix"] = json.loads(instance.palace_matrix)
+        return data
+
+class PalaceTemplateSerializer(serializers.ModelSerializer):
+    palace_matrix = serializers.JSONField()
+
+    class Meta:
+        model = PalaceTemplate
+        fields = ["id", "name", "palace_matrix", "created_at"]
+        read_only_fields = ("id", "created_at")
+
+    def create(self, validated_data):
+        validated_data["palace_matrix"] = json.dumps(validated_data["palace_matrix"])
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["palace_matrix"] = json.loads(instance.palace_matrix)
+        return data

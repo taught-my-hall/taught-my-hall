@@ -1,22 +1,45 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 
-class Room(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms')
+class UserPalace(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE, # If the user is deleted, all their palaces are deleted as well
+        related_name='palaces' 
+    )
 
-    name = models.CharField(max_length=100, unique=False)
+    name = models.CharField(max_length=100)
+    palace_matrix = models.TextField(null=True, blank=True) 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.name} (user: {self.user.username})"
 
+class PalaceTemplate(models.Model):
+    name = models.CharField(max_length=255)
+    palace_matrix = models.TextField()  # JSON string [][]
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Furniture(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="furniture")
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='furniture')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_furniture"
+    )
+    palace = models.ForeignKey(
+        UserPalace,
+        on_delete=models.CASCADE,
+        related_name="furniture",
+        null=True,
+        blank=True
+    )
 
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -24,11 +47,11 @@ class Furniture(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} in room: {self.room.name}"
+        return f"{self.name} in palace: {self.palace.name}"
 
 
 class Flashcard(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="flashcards")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="flashcards")
     furniture = models.ForeignKey(Furniture, on_delete=models.CASCADE, related_name='flashcards')
 
     front = models.TextField()
@@ -43,3 +66,4 @@ class Flashcard(models.Model):
 
     def __str__(self):
         return f"{self.front[:30]}..."
+

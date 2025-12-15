@@ -6,52 +6,57 @@ from rest_framework.permissions import IsAuthenticated
 
 from django.utils import timezone
 
-from .models import Room, Furniture, Flashcard
-from .serializers import RoomSerializer, FurnitureSerializer, FlashcardSerializer
+from .models import UserPalace, PalaceTemplate, Furniture, Flashcard
+from .serializers import UserPalaceSerializer, FurnitureSerializer, FlashcardSerializer
 from .services.spaced_repetition import apply_sm2
 
 
-class RoomViewSet(viewsets.ModelViewSet):
+class UserPalaceViewSet(viewsets.ModelViewSet):
     """
-    GET /rooms/
-        - Returns a list of all rooms.
+    GET /palaces/
+        - Returns a list of all palaces.
 
-    GET /rooms/<id>/
-        - Returns a single room with its details.
+    GET /palaces/<id>/
+        - Returns a single palace with its details.
 
-    POST /rooms/
-        - Creates a new room.
+    POST /palaces/
+        - Creates a new palace.
 
-    PUT /rooms/<id>/
-        - Updates an existing room
+    PUT /palaces/<id>/
+        - Updates an existing palace
 
-    DELETE /rooms/<id>/
-        - Deletes a room.
+    DELETE /palaces/<id>/
+        - Deletes a palace.
     """
-    serializer_class = RoomSerializer
+    serializer_class = UserPalaceSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # return only rooms that belong to the logged-in user
+        # return only palaces that belong to the logged-in user
         user = self.request.user
-        return Room.objects.filter(user=user)
+        return UserPalace.objects.filter(user=user)
 
     def perform_create(self, serializer):
         # always set user to request.user
         serializer.save(user=self.request.user)
 
-
     @action(detail=True, methods=["get"])
     def furniture(self, request, pk=None):
-        """GET /rooms/<id>/furniture/ — allowed only if room belongs to user"""
-        room = self.get_object()
+        """
+        GET /palaces/<id>/furniture/
+        Returns furniture only if the palace belongs to the logged-in user
+        """
+        palace = self.get_object()
 
         # SECURITY CHECK
-        if room.user != request.user:
+        if palace.user != request.user:
             return Response({"error": "Not allowed"}, status=403)
 
-        items = room.furniture.all()
+        items = palace.furniture.all()
         return Response(FurnitureSerializer(items, many=True).data)
+
+
+
 
 
 class FurnitureViewSet(viewsets.ModelViewSet):

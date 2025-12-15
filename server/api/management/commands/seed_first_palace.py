@@ -1,20 +1,83 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from api.models import Room, Furniture, Flashcard
 from django.utils import timezone
+from api.models import UserPalace, PalaceTemplate, Furniture, Flashcard
+import json
+
+PALACE_MATRIX = [
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  [
+    '1__',
+    '1__',
+    '1__',
+    '1__',
+    '1__',
+    '0__',
+    '2_bedGreen_',
+    '2__',
+    '2__',
+    '2__',
+    '2__',
+  ],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
+  ['0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__'],
+  [
+    '3__',
+    '3__0',
+    '3__',
+    '3__',
+    '3__',
+    '0__',
+    '4__',
+    '4__',
+    '4__0',
+    '4__',
+    '4__',
+  ],
+  ['3__', '3_chairWood_', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4_chairWood_', '4__', '4__', '4__', '4__'],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+  [
+    '3__',
+    '3__',
+    '3_bedGreen_',
+    '3__',
+    '3__',
+    '0__',
+    '4__',
+    '4_bedGreen_',
+    '4__',
+    '4__',
+    '4__',
+  ],
+  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
+]
+
 
 
 class Command(BaseCommand):
-    help = "Create initial room with flashcards data"
+    help = "Create initial palace with flashcards data"
 
     def handle(self, *args, **kwargs):
-        self.stdout.write("Seeding room + flashcards...")
+        self.stdout.write("Seeding palace + flashcards...")
 
-        user, _ = User.objects.get_or_create(username="demo")
+        user = User.objects.get(id=1)
 
-        room, _ = Room.objects.get_or_create(
+        template, _ = PalaceTemplate.objects.get_or_create(
+            name="Default Learning Palace",
+            defaults={
+                "palace_matrix": json.dumps(PALACE_MATRIX)
+            }
+        )
+
+        palace, _ = UserPalace.objects.get_or_create(
             user=user,
-            name="First Learning Room"
+            name="First Learning Palace",
+            defaults={
+                "palace_matrix": template.palace_matrix
+            }
         )
 
         raw_flashcards = [
@@ -61,11 +124,11 @@ class Command(BaseCommand):
         ]
 
         furniture, _ = Furniture.objects.get_or_create(
-            room=room,
+            palace=palace,
+            user=user,
             name="Soybean Inoculation Basics",
             defaults={
-                "description": "20 flashcards about soybean inoculation",
-                "user": user
+                "description": "20 flashcards about soybean inoculation"
             }
         )
 
