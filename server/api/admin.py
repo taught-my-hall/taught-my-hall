@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Room, Furniture
+from .models import UserPalace, PalaceTemplate, Furniture, Flashcard
 
-admin.site.register(Room)
+admin.site.register(UserPalace)
+admin.site.register(PalaceTemplate)
 admin.site.register(Furniture)
+admin.site.register(Flashcard)
