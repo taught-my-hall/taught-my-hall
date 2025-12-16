@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { iconsFishcards, iconsGui } from '../utils/textures';
 
 const fakeFetch = async () => {
   return new Promise(resolve => {
@@ -23,7 +31,7 @@ const fakeFetch = async () => {
             { id: 6, front: 'What year did the Titanic sink?', back: '1912' },
             {
               id: 7,
-              front: 'What is the smallest country in the world?',
+              front: 'What is the smallest country?',
               back: 'Vatican City',
             },
             { id: 8, front: 'How many continents are there?', back: '7' },
@@ -34,7 +42,7 @@ const fakeFetch = async () => {
             },
             {
               id: 10,
-              front: 'What is the most spoken language by native speakers?',
+              front: 'Most spoken language?',
               back: 'Mandarin Chinese',
             },
           ],
@@ -44,10 +52,14 @@ const fakeFetch = async () => {
   });
 };
 
+const iconList = Object.keys(iconsFishcards);
+
 export default function FurnitureScreen() {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [areAllVisible, setAreAllVisible] = useState(false);
 
   const refetchQuestions = useCallback(() => {
     setIsLoading(true);
@@ -69,10 +81,6 @@ export default function FurnitureScreen() {
     refetchQuestions();
   }, [refetchQuestions]);
 
-  const handleTryAgain = () => {
-    refetchQuestions();
-  };
-
   const handleToggleQuestion = questionId => {
     setQuestions(prev =>
       prev.map(q => {
@@ -84,48 +92,95 @@ export default function FurnitureScreen() {
     );
   };
 
+  const handleGlobalToggle = () => {
+    const newState = !areAllVisible;
+    setAreAllVisible(newState);
+    setQuestions(prev => prev.map(q => ({ ...q, hidden: !newState })));
+  };
+
+  const getIconForIndex = index => {
+    const iconName = iconsFishcards[iconList[index % iconList.length]];
+    return { uri: iconName };
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.main}>
-        <Text style={styles.heading}>Questions are waiting to be learned!</Text>
+        {/* HEADER: Tytuł + Oko sterujące */}
+        <View style={styles.header}>
+          <Text style={styles.heading}>Flashcards Framing</Text>
+          <Pressable onPress={handleGlobalToggle} style={styles.eyeButton}>
+            {/* Ikona oka zmienia się w zależności od stanu globalnego */}
+            <Image
+              source={{
+                uri: areAllVisible ? iconsGui['eye'] : iconsGui['eye-slash'],
+              }}
+              style={styles.eyeIcon}
+              resizeMode="contain"
+            />
+          </Pressable>
+        </View>
 
+        {/* LOADING */}
         {isLoading && (
-          <Text style={styles.loadingText}>
-            Please hold on while we are loading your questions...
-          </Text>
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.infoText}>Loading questions...</Text>
+          </View>
         )}
 
+        {/* ERROR */}
         {!!error && (
-          <View style={styles.error.container}>
-            <Text style={styles.error.text}>{error}</Text>
-            <Pressable style={styles.error.button} onPress={handleTryAgain}>
-              <Text style={styles.error.buttonText}>
-                Download questions again
-              </Text>
+          <View style={styles.centerBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={refetchQuestions}>
+              <Text style={styles.retryText}>Try again</Text>
             </Pressable>
           </View>
         )}
 
-        {questions.length > 0 && !isLoading && !error && (
-          <View style={styles.questions.container}>
-            {questions.map(question => (
-              <View style={styles.questions.question} key={question.id}>
-                <View style={styles.questions.frontBack}>
-                  <Text style={styles.questions.front}>{question.front}</Text>
-                  {!question.hidden && (
-                    <Text style={styles.questions.back}>{question.back}</Text>
-                  )}
-                </View>
+        {/* GRID Z KAFELKAMI */}
+        {!isLoading && !error && questions.length > 0 && (
+          <View style={styles.gridContainer}>
+            {questions.map((q, index) => {
+              const iconSource = getIconForIndex(index);
+
+              return (
                 <Pressable
-                  style={styles.questions.button}
-                  onPress={() => handleToggleQuestion(question.id)}
+                  key={q.id}
+                  onPress={() => handleToggleQuestion(q.id)}
+                  style={[
+                    styles.tile,
+                    q.hidden ? styles.tileHidden : styles.tileRevealed,
+                  ]}
                 >
-                  <Text style={styles.questions.buttonText}>
-                    {question.hidden ? 'Show' : 'Hide'}
-                  </Text>
+                  {q.hidden ? (
+                    <Image
+                      source={iconSource}
+                      style={styles.hiddenIcon}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={styles.revealedContent}>
+                      <Text style={styles.label}>Question:</Text>
+                      <Text style={styles.questionText}>{q.front}</Text>
+
+                      <View style={styles.separator} />
+
+                      <Text style={styles.label}>Answer:</Text>
+                      <Text style={styles.answerText}>{q.back}</Text>
+
+                      {/* Opcjonalnie: ikona jako znak wodny w tle */}
+                      <Image
+                        source={iconSource}
+                        style={styles.watermark}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  )}
                 </Pressable>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </View>
@@ -135,92 +190,136 @@ export default function FurnitureScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
     flex: 1,
+    backgroundColor: '#5D4037',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
+    padding: 16,
   },
   main: {
-    maxWidth: 1000,
-    padding: 32,
-    borderRadius: 32,
+    width: '100%',
+    maxWidth: 900,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#795548',
+  },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    backgroundColor: '#1E1E1E',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#fff',
   },
   heading: {
-    fontSize: 28,
-    fontWeight: 600,
+    fontSize: 24,
+    fontWeight: '700',
     color: '#fff',
-    marginBottom: 24,
   },
-  loadingText: {
-    fontSize: 20,
-    color: '#bbb',
-    marginBottom: 16,
+  eyeButton: {
+    padding: 4,
   },
-  error: {
-    text: {
-      fontSize: 20,
-      color: '#f66',
-      marginBottom: 16,
-    },
-    button: {
-      background: '#2196F3',
-      height: 40,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 8,
-      alignSelf: 'center',
-      paddingLeft: 32,
-      paddingRight: 32,
-    },
-    buttonText: {
-      color: '#fff',
-      fontSize: 16,
-    },
+  eyeIcon: {
+    width: 32,
+    height: 32,
+    tintColor: '#fff',
   },
-  questions: {
-    container: {
-      display: 'flex',
-      gap: 8,
-      maxHeight: 600,
-      overflowY: 'hidden',
-    },
-    question: {
-      display: 'flex',
-      padding: 16,
-      borderRadius: 8,
-      border: '1px solid #444',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: 32,
-    },
-    frontBack: {
-      display: 'flex',
-      gap: 4,
-    },
-    front: {
-      color: '#fff',
-      fontSize: 16,
-    },
-    back: {
-      color: '#aaa',
-      fontSize: 16,
-    },
-    button: {
-      height: 32,
-      paddingLeft: 8,
-      paddingRight: 8,
-      borderRadius: 4,
-      backgroundColor: '#444',
-      border: '1px solid #444',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    buttonText: {
-      fontSize: 14,
-      color: '#fff',
-    },
+
+  centerBox: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  infoText: {
+    color: '#ddd',
+    marginTop: 10,
+    fontSize: 16,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  retryBtn: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: { color: '#fff' },
+
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+  },
+
+  tile: {
+    width: 160,
+    height: 160,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+
+  tileHidden: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0,
+  },
+  hiddenIcon: {
+    width: 80,
+    height: 80,
+    tintColor: '#000',
+    opacity: 0.6,
+  },
+
+  tileRevealed: {
+    backgroundColor: '#121212',
+    borderWidth: 2,
+    borderColor: '#fff',
+    padding: 12,
+  },
+  revealedContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  label: {
+    color: '#aaa',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  questionText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  answerText: {
+    color: '#ddd',
+    fontSize: 13,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#444',
+    marginVertical: 6,
+  },
+  watermark: {
+    position: 'absolute',
+    bottom: -10,
+    right: -10,
+    width: 60,
+    height: 60,
+    opacity: 0.1,
+    tintColor: '#fff',
   },
 });
