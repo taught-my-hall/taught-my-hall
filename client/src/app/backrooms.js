@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions, // 1. Import hook
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
@@ -13,11 +13,12 @@ import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
 
-const { width, height } = Dimensions.get('window');
-const svgWidth = width * 3;
-
 export default function BackroomScreen() {
   const router = useRouter();
+
+  const { width, height } = useWindowDimensions();
+  const svgWidth = width * 3;
+
   const isNewPalaceOpen = useSharedValue(false);
   const [rooms, setRooms] = useState([
     { title: 'Create new room' },
@@ -43,7 +44,6 @@ export default function BackroomScreen() {
           ? Math.max(prev - 1, 0)
           : Math.min(prev + 1, rooms.length - 1)
       );
-
       offset.setValue(0);
     });
   };
@@ -67,7 +67,15 @@ export default function BackroomScreen() {
   return (
     <View style={styles.container}>
       <Animated.View
-        style={[styles.svgBox, { transform: [{ translateX: offset }] }]}
+        key={`container-${width}`}
+        style={[
+          styles.svgBox,
+          {
+            width: svgWidth,
+            height: height,
+            transform: [{ translateX: offset }],
+          },
+        ]}
       >
         <View style={{ width: svgWidth, height: height }}>
           {pointedRooms.map((p, i) => {
@@ -79,6 +87,7 @@ export default function BackroomScreen() {
                 pointerEvents="box-none"
               >
                 <BackroomLines
+                  key={`room-${p}-${width}`}
                   onPress={() => {
                     router.navigate('/palace/TODO');
                   }}
@@ -86,13 +95,15 @@ export default function BackroomScreen() {
                   p={p}
                   total={rooms.length}
                   title={rooms[p].title}
-                  svgWidth={svgWidth} // <--- Pass this prop!
+                  svgWidth={svgWidth}
                 />
               </View>
             );
           })}
         </View>
       </Animated.View>
+
+      {/* Navigation Buttons */}
       {pointerBefore !== 0 && (
         <Pressable style={[styles.button, { left: 0 }]} onPress={roomLeft}>
           <Text selectable={false} style={styles.buttonText}>
@@ -107,9 +118,11 @@ export default function BackroomScreen() {
           </Text>
         </Pressable>
       )}
+
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
         <Text style={{ fontSize: 24, color: '#FFF' }}>New Palace</Text>
       </Pressable>
+
       <Vignette isOpened={isNewPalaceOpen}>
         <PalaceList />
       </Vignette>
@@ -123,10 +136,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  text: {
-    color: '#fff',
-    fontSize: 24,
   },
   button: {
     position: 'absolute',
@@ -144,8 +153,6 @@ const styles = StyleSheet.create({
   svgBox: {
     position: 'absolute',
     top: 0,
-    width: svgWidth,
-    height: height,
   },
   reviewButton: {
     position: 'absolute',
@@ -159,6 +166,5 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
   },
 });

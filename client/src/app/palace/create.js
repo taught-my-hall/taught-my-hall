@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import {
   Animated,
-  Dimensions,
   PanResponder,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions, // 1. Import hook
   View,
 } from 'react-native';
 import { setTempPalaceMatrix } from '../../utils/tempData';
@@ -35,12 +35,6 @@ const INITIAL_BOUNDS = {
   maxY: 9,
 };
 
-const DEFAULT_ROOMS = [
-  { id: '3', name: 'Room 3', color: '#4C1D95', x: -2, y: -2, w: 4, h: 4 },
-  { id: '2', name: 'Room 2', color: '#10B981', x: 3, y: -6, w: 3, h: 3 },
-  { id: '1', name: 'Room 1', color: '#991B1B', x: -6, y: 3, w: 3, h: 3 },
-];
-
 const generateRandomColor = () => {
   const hex = Math.floor(Math.random() * 16777215).toString(16);
   return `#${hex.padEnd(6, '0')}`;
@@ -57,10 +51,11 @@ export default function PalaceCreatorScreen() {
   const boundsRef = useRef(INITIAL_BOUNDS);
   const panVal = useRef({ x: 0, y: 0 });
 
-  const window = Dimensions.get('window');
+  const window = useWindowDimensions();
 
   const initialWidth = 20 * CELL_TOTAL;
   const initialHeight = 20 * CELL_TOTAL;
+
   const initialCamX = (window.width - initialWidth) / 2;
   const initialCamY = (window.height - initialHeight) / 2;
 
@@ -112,7 +107,9 @@ export default function PalaceCreatorScreen() {
   };
 
   useEffect(() => {
+    pan.setValue({ x: initialCamX, y: initialCamY });
     panVal.current = { x: initialCamX, y: initialCamY };
+
     const id = pan.addListener(value => {
       panVal.current = value;
     });
@@ -310,7 +307,6 @@ export default function PalaceCreatorScreen() {
         <Text style={styles.headerTitle}>Infinite Grid</Text>
       </View>
 
-      {/* 3. Apply the web styles to the Viewport */}
       <View
         style={[styles.viewport, webContainerStyle]}
         {...panResponder.panHandlers}
@@ -325,10 +321,8 @@ export default function PalaceCreatorScreen() {
           {gridCells}
         </Animated.View>
         <View style={styles.roomsListBlock}>
-          {/* Screen Title */}
           <Text style={styles.headerListTitle}>Rooms</Text>
 
-          {/* New Room Action */}
           <TouchableOpacity
             style={styles.newRoomButton}
             onPress={handleAddRoom}
@@ -434,7 +428,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    paddingLeft: 5, // Align + with the border of the box below
+    paddingLeft: 5,
   },
   plusIcon: {
     color: '#FFFFFF',
@@ -449,25 +443,22 @@ const styles = StyleSheet.create({
     position: 'relative',
     top: 1,
   },
-  // --- The requested style block ---
   roomsList: {
     flexDirection: 'column',
-    gap: 15, // Adds space between items (React Native 0.71+)
+    gap: 15,
   },
-  // Style for the selected room (Room 3)
   roomItemActive: {
     borderWidth: 2,
     borderColor: '#FFFFFF',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    alignSelf: 'flex-start', // Wraps width to content
-    minWidth: 150, // Ensures the pill shape looks similar to image
+    alignSelf: 'flex-start',
+    minWidth: 150,
   },
-  // Style for non-selected rooms
   roomItem: {
     paddingVertical: 10,
-    paddingHorizontal: 20, // Keep padding to align text with the item above
+    paddingHorizontal: 20,
   },
   roomText: {
     fontSize: 24,
@@ -479,7 +470,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    // Platform.select works perfectly inside StyleSheet.create
     ...Platform.select({
       web: { userSelect: 'none' },
     }),
@@ -497,6 +487,6 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
+    zIndex: 200,
   },
 });
