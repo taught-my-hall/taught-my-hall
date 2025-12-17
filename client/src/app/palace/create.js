@@ -35,15 +35,59 @@ const INITIAL_BOUNDS = {
   maxY: 9,
 };
 
-const DEFAULT_ROOMS = [
-  { id: '3', name: 'Room 3', color: '#4C1D95', x: -2, y: -2, w: 4, h: 4 },
-  { id: '2', name: 'Room 2', color: '#10B981', x: 3, y: -6, w: 3, h: 3 },
-  { id: '1', name: 'Room 1', color: '#991B1B', x: -6, y: 3, w: 3, h: 3 },
-];
-
 const generateRandomColor = () => {
   const hex = Math.floor(Math.random() * 16777215).toString(16);
   return `#${hex.padEnd(6, '0')}`;
+};
+
+const getCellsForRoom = (roomId, cellMap) => {
+  const cells = [];
+  Object.keys(cellMap).forEach(key => {
+    if (cellMap[key] === roomId) {
+      const [r, c] = key.split(',').map(Number);
+      cells.push({ r, c, key });
+    }
+  });
+  return cells;
+};
+
+const isConnected = cells => {
+  if (cells.length <= 1) return true;
+
+  const start = cells[0];
+  const queue = [start];
+  const visited = new Set([start.key]);
+  const cellSet = new Set(cells.map(c => c.key));
+
+  let count = 0;
+
+  while (queue.length > 0) {
+    const { r, c } = queue.shift();
+    count++;
+
+    const neighbors = [
+      { r: r + 1, c: c },
+      { r: r - 1, c: c },
+      { r: r, c: c + 1 },
+      { r: r, c: c - 1 },
+    ];
+
+    neighbors.forEach(n => {
+      const key = `${n.r},${n.c}`;
+      if (cellSet.has(key) && !visited.has(key)) {
+        visited.add(key);
+        queue.push({ r: n.r, c: n.c, key });
+      }
+    });
+  }
+
+  return count === cells.length;
+};
+
+const isNeighbor = (targetR, targetC, roomCells) => {
+  return roomCells.some(
+    cell => Math.abs(cell.r - targetR) + Math.abs(cell.c - targetC) === 1
+  );
 };
 
 export default function PalaceCreatorScreen() {
@@ -51,9 +95,16 @@ export default function PalaceCreatorScreen() {
   const [rooms, setRooms] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState('0');
   const activeRoomIdRef = useRef('0');
-  const [selectedCells, setSelectedCells] = useState({});
-  const [bounds, setBounds] = useState(INITIAL_BOUNDS);
 
+  const [selectedCells, setSelectedCells] = useState({});
+  const selectedCellsRef = useRef({});
+
+  // --- Notification State ---
+  const [notification, setNotification] = useState(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // --------------------------
+
+  const [bounds, setBounds] = useState(INITIAL_BOUNDS);
   const boundsRef = useRef(INITIAL_BOUNDS);
   const panVal = useRef({ x: 0, y: 0 });
 
@@ -67,6 +118,31 @@ export default function PalaceCreatorScreen() {
   const pan = useRef(
     new Animated.ValueXY({ x: initialCamX, y: initialCamY })
   ).current;
+
+  useEffect(() => {
+    selectedCellsRef.current = selectedCells;
+  }, [selectedCells]);
+
+  // --- Notification Helper ---
+  const showNotification = message => {
+    setNotification(message);
+    // Fade In
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    // Fade Out after 2.5 seconds
+    setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setNotification(null));
+    }, 2500);
+  };
+  // ---------------------------
 
   const handleAddRoom = () => {
     const newId = (rooms.length + 1).toString();
@@ -122,18 +198,37 @@ export default function PalaceCreatorScreen() {
   const toggleCell = (r, c) => {
     const key = `${r},${c}`;
     const currentActiveId = activeRoomIdRef.current;
-    if (currentActiveId !== '0') {
-      setSelectedCells(prev => {
-        const currentOwnerId = prev[key];
 
-        if (currentOwnerId === currentActiveId) {
-          const newState = { ...prev };
-          delete newState[key];
-          return newState;
-        } else {
-          return { ...prev, [key]: currentActiveId };
-        }
+    if (currentActiveId === '0') return;
+
+    const currentMap = selectedCellsRef.current;
+    const currentOwnerId = currentMap[key];
+
+    if (currentOwnerId === currentActiveId) {
+      const roomCells = getCellsForRoom(currentActiveId, currentMap);
+      const remainingCells = roomCells.filter(cell => cell.key !== key);
+
+      if (!isConnected(remainingCells)) {
+        showNotification('Cannot split the room into two parts.');
+        return;
+      }
+
+      setSelectedCells(prev => {
+        const newState = { ...prev };
+        delete newState[key];
+        return newState;
       });
+    } else {
+      const roomCells = getCellsForRoom(currentActiveId, currentMap);
+
+      if (roomCells.length > 0) {
+        if (!isNeighbor(r, c, roomCells)) {
+          showNotification('Squares must be adjacent to the room.');
+          return;
+        }
+      }
+
+      setSelectedCells(prev => ({ ...prev, [key]: currentActiveId }));
     }
   };
 
@@ -155,7 +250,6 @@ export default function PalaceCreatorScreen() {
     const currentBounds = boundsRef.current;
     let newBounds = { ...currentBounds };
     let hasChanged = false;
-
     let xOffsetShift = 0;
     let yOffsetShift = 0;
 
@@ -164,18 +258,15 @@ export default function PalaceCreatorScreen() {
       xOffsetShift -= EXPANSION_AMOUNT * CELL_TOTAL;
       hasChanged = true;
     }
-
     if (currentBounds.maxX - clickedX < DISTANCE_TO_EDGE_TRIGGER) {
       newBounds.maxX += EXPANSION_AMOUNT;
       hasChanged = true;
     }
-
     if (clickedY - currentBounds.minY < DISTANCE_TO_EDGE_TRIGGER) {
       newBounds.minY -= EXPANSION_AMOUNT;
       yOffsetShift -= EXPANSION_AMOUNT * CELL_TOTAL;
       hasChanged = true;
     }
-
     if (currentBounds.maxY - clickedY < DISTANCE_TO_EDGE_TRIGGER) {
       newBounds.maxY += EXPANSION_AMOUNT;
       hasChanged = true;
@@ -187,7 +278,6 @@ export default function PalaceCreatorScreen() {
         y: panVal.current.y + yOffsetShift,
       });
       pan.setValue({ x: 0, y: 0 });
-
       boundsRef.current = newBounds;
       setBounds(newBounds);
     }
@@ -310,7 +400,14 @@ export default function PalaceCreatorScreen() {
         <Text style={styles.headerTitle}>Infinite Grid</Text>
       </View>
 
-      {/* 3. Apply the web styles to the Viewport */}
+      {notification && (
+        <Animated.View
+          style={[styles.notificationContainer, { opacity: fadeAnim }]}
+        >
+          <Text style={styles.notificationText}>{notification}</Text>
+        </Animated.View>
+      )}
+
       <View
         style={[styles.viewport, webContainerStyle]}
         {...panResponder.panHandlers}
@@ -325,10 +422,8 @@ export default function PalaceCreatorScreen() {
           {gridCells}
         </Animated.View>
         <View style={styles.roomsListBlock}>
-          {/* Screen Title */}
           <Text style={styles.headerListTitle}>Rooms</Text>
 
-          {/* New Room Action */}
           <TouchableOpacity
             style={styles.newRoomButton}
             onPress={handleAddRoom}
@@ -388,11 +483,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  subTitle: {
-    color: '#666',
-    fontSize: 12,
-    marginTop: 4,
+  // --- Notification Styles ---
+  notificationContainer: {
+    position: 'absolute',
+    top: 80, // Shows below the header
+    alignSelf: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.95)', // Red alert color
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    zIndex: 999, // Ensure it sits on top of everything
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
+  notificationText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  // ---------------------------
   viewport: {
     flex: 1,
     backgroundColor: '#000',
@@ -422,7 +534,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
   },
-
   headerListTitle: {
     color: '#FFFFFF',
     fontSize: 28,
@@ -434,7 +545,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    paddingLeft: 5, // Align + with the border of the box below
+    paddingLeft: 5,
   },
   plusIcon: {
     color: '#FFFFFF',
@@ -449,25 +560,22 @@ const styles = StyleSheet.create({
     position: 'relative',
     top: 1,
   },
-  // --- The requested style block ---
   roomsList: {
     flexDirection: 'column',
-    gap: 15, // Adds space between items (React Native 0.71+)
+    gap: 15,
   },
-  // Style for the selected room (Room 3)
   roomItemActive: {
     borderWidth: 2,
     borderColor: '#FFFFFF',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    alignSelf: 'flex-start', // Wraps width to content
-    minWidth: 150, // Ensures the pill shape looks similar to image
+    alignSelf: 'flex-start',
+    minWidth: 150,
   },
-  // Style for non-selected rooms
   roomItem: {
     paddingVertical: 10,
-    paddingHorizontal: 20, // Keep padding to align text with the item above
+    paddingHorizontal: 20,
   },
   roomText: {
     fontSize: 24,
@@ -479,7 +587,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    // Platform.select works perfectly inside StyleSheet.create
     ...Platform.select({
       web: { userSelect: 'none' },
     }),
@@ -497,6 +604,6 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
+    zIndex: 200,
   },
 });
