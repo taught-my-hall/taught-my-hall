@@ -2,11 +2,11 @@ import { useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions, // 1. Import this
 } from 'react-native';
 import {
   Gesture,
@@ -23,7 +23,8 @@ import Vignette from '../../../components/Vignette';
 import { textures } from '../../../utils/textures';
 import FurnitureScreen from '../../furniture';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Removed static Dimensions.get call here
+
 const PALACE_MAP_RAW = [
   ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
   [
@@ -120,6 +121,8 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 
 function PalaceScreen() {
   const router = useRouter();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -145,6 +148,31 @@ function PalaceScreen() {
     }),
     [imgStone, imgPlanks, imgBrick, furnitureSheet]
   );
+
+  useEffect(() => {
+    translateX.value = clampValues(
+      translateX.value,
+      scale.value,
+      MAP_PIXEL_WIDTH,
+      screenWidth
+    );
+    translateY.value = clampValues(
+      translateY.value,
+      scale.value,
+      MAP_PIXEL_HEIGHT,
+      screenHeight
+    );
+    savedTranslateX.value = translateX.value;
+    savedTranslateY.value = translateY.value;
+  }, [
+    screenWidth,
+    screenHeight,
+    scale,
+    translateX,
+    translateY,
+    savedTranslateX,
+    savedTranslateY,
+  ]);
 
   const processedTiles = useMemo(() => {
     const tiles = [];
@@ -237,13 +265,13 @@ function PalaceScreen() {
             rawX,
             scale.value,
             MAP_PIXEL_WIDTH,
-            SCREEN_WIDTH
+            screenWidth
           );
           translateY.value = clampValues(
             rawY,
             scale.value,
             MAP_PIXEL_HEIGHT,
-            SCREEN_HEIGHT
+            screenHeight
           );
         })
         .onEnd(() => {
@@ -257,6 +285,8 @@ function PalaceScreen() {
       savedTranslateY,
       isFurnitureOpen,
       scale,
+      screenWidth,
+      screenHeight,
     ]
   );
 
@@ -273,13 +303,13 @@ function PalaceScreen() {
             translateX.value,
             newScale,
             MAP_PIXEL_WIDTH,
-            SCREEN_WIDTH
+            screenWidth
           );
           translateY.value = clampValues(
             translateY.value,
             newScale,
             MAP_PIXEL_HEIGHT,
-            SCREEN_HEIGHT
+            screenHeight
           );
         })
         .onEnd(() => {
@@ -294,6 +324,8 @@ function PalaceScreen() {
       translateY,
       savedTranslateX,
       savedTranslateY,
+      screenWidth,
+      screenHeight,
     ]
   );
 
@@ -313,8 +345,9 @@ function PalaceScreen() {
       const oldTranslateX = translateX.value;
       const oldTranslateY = translateY.value;
 
-      const screenCenterX = SCREEN_WIDTH / 2;
-      const screenCenterY = SCREEN_HEIGHT / 2;
+      // Use dynamic dimensions
+      const screenCenterX = screenWidth / 2;
+      const screenCenterY = screenHeight / 2;
       const ROOM_CENTER_X = MAP_PIXEL_WIDTH / 2;
       const ROOM_CENTER_Y = MAP_PIXEL_HEIGHT / 2;
 
@@ -406,13 +439,13 @@ function PalaceScreen() {
         newTranslateX,
         newScale,
         MAP_PIXEL_WIDTH,
-        SCREEN_WIDTH
+        screenWidth // Dynamic width
       );
       translateY.value = clampValues(
         newTranslateY,
         newScale,
         MAP_PIXEL_HEIGHT,
-        SCREEN_HEIGHT
+        screenHeight // Dynamic height
       );
 
       savedTranslateX.value = translateX.value;
@@ -430,6 +463,8 @@ function PalaceScreen() {
       savedTranslateX,
       savedTranslateY,
       isFurnitureOpen,
+      screenWidth, // Added dependency
+      screenHeight, // Added dependency
     ]
   );
 
@@ -506,7 +541,6 @@ const style = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
   },
   reviewButtonText: { fontSize: 24, color: '#FFF' },
 });

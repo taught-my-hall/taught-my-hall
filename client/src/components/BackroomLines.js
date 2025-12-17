@@ -1,47 +1,40 @@
-// 1. Import StyleSheet and Platform
+import PropTypes from 'prop-types';
 import {
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Circle, Line, Polygon, Svg, Text as SvgText } from 'react-native-svg';
 
-const { width, height } = Dimensions.get('window');
-
-const floorHeight = 0.7;
-const ceilHeight = 0.15;
-const leftCorner = 0.25;
-const rightCorner = 0.75;
-const doorWidth = 0.2;
-const doorHeight = 0.4;
-
-const floorColor = '#403524ff';
+// --- Layout Constants (Ratios) ---
+const FLOOR_HEIGHT_RATIO = 0.7;
+const CEIL_HEIGHT_RATIO = 0.15;
+const LEFT_CORNER = 0.25;
+const RIGHT_CORNER = 0.75;
+const DOOR_WIDTH_RATIO = 0.2;
+const DOOR_HEIGHT_RATIO = 0.4;
+const FLOOR_COLOR = '#403524ff';
 
 export default function BackroomLines({
-  // eslint-disable-next-line
   i,
-  // eslint-disable-next-line
   p,
-  // eslint-disable-next-line
   total,
-  // eslint-disable-next-line
   title,
-  // eslint-disable-next-line
   onPress,
-  // eslint-disable-next-line
   svgWidth,
 }) {
+  const { width, height } = useWindowDimensions();
+
   const isFirst = p === 0;
   const isLast = p === total - 1;
 
-  // --- Dynamic Style Variables ---
-  // These must stay here as they depend on props (i)
-  const doorX = width * (i + 0.5 - doorWidth / 2);
-  const doorY = height * (floorHeight - doorHeight);
-  const doorW = width * doorWidth;
-  const doorH = height * doorHeight;
+  const doorW = width * DOOR_WIDTH_RATIO;
+  const doorH = height * DOOR_HEIGHT_RATIO;
+
+  const doorX = width * (i + 0.5 - DOOR_WIDTH_RATIO / 2);
+  const doorY = height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO);
 
   const canvasWidth = svgWidth || width;
 
@@ -55,62 +48,61 @@ export default function BackroomLines({
   };
 
   return (
-    <View
-      style={styles.container} // Use StyleSheet
-      pointerEvents="box-none"
-    >
+    <View style={{ width, height }} pointerEvents="box-none">
       <Svg
         height={height}
         width={canvasWidth}
         pointerEvents="none"
-        style={styles.svg} // Use StyleSheet
+        style={styles.svg}
       >
         {isFirst ? (
           <>
             <Polygon
-              points={`${width * (i + leftCorner)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height} 
-            ${width * i},${height}`}
-              fill={floorColor}
+              points={`
+                ${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 0.51)},${height} 
+                ${width * i},${height}
+              `}
+              fill={FLOOR_COLOR}
             />
             <Line
-              x1={width * (i + leftCorner)}
-              y1={height * floorHeight}
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * FLOOR_HEIGHT_RATIO}
               x2={width * (i + 0.5)}
-              y2={height * floorHeight}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
               x1={width * i}
               y1={height}
-              x2={width * (i + leftCorner)}
-              y2={height * floorHeight}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
-              x1={width * (i + leftCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + leftCorner)}
-              y2={height * floorHeight}
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
               x1={width * i}
               y1={0}
-              x2={width * (i + leftCorner)}
-              y2={height * ceilHeight}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
-              x1={width * (i + leftCorner)}
-              y1={height * ceilHeight}
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
               x2={width * (i + 0.5)}
-              y2={height * ceilHeight}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
@@ -118,74 +110,79 @@ export default function BackroomLines({
         ) : (
           <>
             <Polygon
-              points={`${width * i},${height * floorHeight} 
-            ${width * (i + 0.51)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height} 
-            ${width * i},${height}`}
-              fill={floorColor}
+              points={`
+                ${width * i},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 0.51)},${height} 
+                ${width * i},${height}
+              `}
+              fill={FLOOR_COLOR}
             />
             <Line
               x1={width * i}
-              y1={height * floorHeight}
+              y1={height * FLOOR_HEIGHT_RATIO}
               x2={width * (i + 0.5)}
-              y2={height * floorHeight}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
               x1={width * i}
-              y1={height * ceilHeight}
+              y1={height * CEIL_HEIGHT_RATIO}
               x2={width * (i + 0.5)}
-              y2={height * ceilHeight}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
           </>
         )}
+
         {isLast ? (
           <>
             <Polygon
-              points={`${width * (i + 0.5)},${height * floorHeight} 
-            ${width * (i + rightCorner)},${height * floorHeight} 
-            ${width * (i + 1)},${height} 
-            ${width * (i + 0.5)},${height}`}
-              fill={floorColor}
+              points={`
+                ${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 1)},${height} 
+                ${width * (i + 0.5)},${height}
+              `}
+              fill={FLOOR_COLOR}
             />
             <Line
               x1={width * (i + 0.5)}
-              y1={height * floorHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * floorHeight}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
-              x1={width * (i + rightCorner)}
-              y1={height * floorHeight}
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * FLOOR_HEIGHT_RATIO}
               x2={width * (i + 1)}
               y2={height}
               stroke="white"
               strokeWidth={2}
             />
             <Line
-              x1={width * (i + rightCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * floorHeight}
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
               x1={width * (i + 0.5)}
-              y1={height * ceilHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * ceilHeight}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
-              x1={width * (i + rightCorner)}
-              y1={height * ceilHeight}
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
               x2={width * (i + 1)}
               y2={0}
               stroke="white"
@@ -195,59 +192,64 @@ export default function BackroomLines({
         ) : (
           <>
             <Polygon
-              points={`${width * (i + 0.5)},${height * floorHeight} 
-            ${width * (i + 1)},${height * floorHeight} 
-            ${width * (i + 1)},${height} 
-            ${width * (i + 0.5)},${height}`}
-              fill={floorColor}
+              points={`
+                ${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 1)},${height * FLOOR_HEIGHT_RATIO} 
+                ${width * (i + 1)},${height} 
+                ${width * (i + 0.5)},${height}
+              `}
+              fill={FLOOR_COLOR}
             />
             <Line
               x1={width * (i + 0.5)}
-              y1={height * floorHeight}
+              y1={height * FLOOR_HEIGHT_RATIO}
               x2={width * (i + 1)}
-              y2={height * floorHeight}
+              y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
             <Line
               x1={width * (i + 0.5)}
-              y1={height * ceilHeight}
+              y1={height * CEIL_HEIGHT_RATIO}
               x2={width * (i + 1)}
-              y2={height * ceilHeight}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
             />
           </>
         )}
+
+        {/* Door Lines */}
         <Line
-          x1={width * (i + 0.5 - doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 - doorWidth / 2)}
-          y2={height * floorHeight}
+          x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y2={height * FLOOR_HEIGHT_RATIO}
           stroke="white"
           strokeWidth={2}
         />
         <Line
-          x1={width * (i + 0.5 + doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 + doorWidth / 2)}
-          y2={height * floorHeight}
+          x1={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y2={height * FLOOR_HEIGHT_RATIO}
           stroke="white"
           strokeWidth={2}
         />
         <Line
-          x1={width * (i + 0.5 - doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 + doorWidth / 2)}
-          y2={height * (floorHeight - doorHeight)}
+          x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y2={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
           stroke="white"
           strokeWidth={2}
         />
+
         <SvgText
           x={width * (i + 0.5)}
           y={height * 0.35}
           fontSize={24}
-          fill={'white'}
+          fill="white"
           textAnchor="middle"
           fontFamily="Arial"
         >
@@ -259,8 +261,7 @@ export default function BackroomLines({
       <Pressable
         onPress={handlePress}
         accessibilityRole="button"
-        // Use array to combine static styles from StyleSheet
-        // with dynamic styles calculated in the component.
+        accessibilityLabel={`Maps to ${title}`}
         style={[
           styles.pressable,
           {
@@ -275,12 +276,16 @@ export default function BackroomLines({
   );
 }
 
-// --- StyleSheet ---
+BackroomLines.propTypes = {
+  i: PropTypes.number.isRequired,
+  p: PropTypes.number.isRequired,
+  total: PropTypes.number.isRequired,
+  title: PropTypes.string.isRequired,
+  onPress: PropTypes.func,
+  svgWidth: PropTypes.number,
+};
+
 const styles = StyleSheet.create({
-  container: {
-    width: width,
-    height: height,
-  },
   svg: {
     position: 'absolute',
     top: 0,
@@ -290,6 +295,5 @@ const styles = StyleSheet.create({
   pressable: {
     position: 'absolute',
     zIndex: 999,
-    // backgroundColor: 'rgba(255, 0, 0, 0.4)',
   },
 });
