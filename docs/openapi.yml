@@ -6,7 +6,7 @@ info:
 
 servers:
   - description: Development
-    url: http://127.0.0.1:8000/api
+    url: https://palace-server-965384144322.europe-west3.run.app/api
 
 tags:
   - name: Authentication
@@ -504,6 +504,32 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
+  /palace/{palaceId}/flashcards:
+    get:
+      summary: Lists all user's flashcards from palace
+      tags:
+        - Flashcards
+      parameters:
+        - in: query
+          name: onlyInReview
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: If true, lists only flashcards that should be reviewed, that means have next review time before now.
+      responses:
+        '200':
+          description: Successfully listed flashcards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flashcard"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+
+
   /furniture/{furnitureId}/flashcards:
     parameters:
       - name: furnitureId
@@ -567,31 +593,7 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /flashcards:
-    get:
-      summary: Lists all user's flashcards
-      tags:
-        - Flashcards
-      parameters:
-        - in: query
-          name: onlyInReview
-          schema:
-            type: boolean
-            default: false
-          required: false
-          description: If true, lists only flashcards that should be reviewed, that means have next review time before now.
-      responses:
-        '200':
-          description: Successfully listed flashcards
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Flashcard"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-
+  
   /flashcards/{id}:
     parameters:
       - name: id
