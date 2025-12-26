@@ -12,18 +12,16 @@ const doorWidth = 0.2;
 const doorHeight = 0.4;
 
 const BackroomSegment = ({
-  xOffset, // Pozycja X tego segmentu w kontenerze rodzica (np. 0, width, 2*width)
+  xOffset,
   title,
   images = {},
   onPress,
   isFirst,
   isLast,
 }) => {
-  // Współrzędne wewnątrz Stage są lokalne (0 do width), nie dodajemy już xOffset do punktów wielokątów!
   const w = width;
   const h = height;
 
-  // --- GEOMETRIA (Lokalna) ---
   const bx1 = isFirst ? w * leftCorner : 0;
   const bx2 = isLast ? w * rightCorner : w;
 
@@ -53,8 +51,7 @@ const BackroomSegment = ({
     ? [screenTopRight, screenBottomRight, backRight, backTopRight]
     : null;
 
-  // --- GEOMETRIA DRZWI ---
-  const dX = w * (0.5 - doorWidth / 2); // Środek lokalny
+  const dX = w * (0.5 - doorWidth / 2);
   const dY = h * (floorHeight - doorHeight);
   const dW = w * doorWidth;
   const dH = h * doorHeight;
@@ -66,7 +63,6 @@ const BackroomSegment = ({
   ];
 
   return (
-    // Główny kontener pozycjonowany absolutnie w Animated.View
     <View style={[styles.container, { left: xOffset }]}>
       {/* WARSTWA 1: GRAFIKA (Stage per segment) */}
       <Stage width={w} height={h} style={styles.stage}>
@@ -138,7 +134,6 @@ const BackroomSegment = ({
           top: dY,
           width: dW,
           height: dH,
-          // backgroundColor: 'rgba(255,0,0,0.3)', // Debug: odkomentuj by widzieć przycisk
         }}
         onPress={onPress}
       />
@@ -158,5 +153,19 @@ const styles = StyleSheet.create({
     height: height,
   },
 });
+
+BackroomSegment.propTypes = {
+  xOffset: PropTypes.number.isRequired,
+  title: PropTypes.string.isRequired,
+  images: PropTypes.shape({
+    floor: PropTypes.object,
+    wall: PropTypes.object,
+    ceil: PropTypes.object,
+    door: PropTypes.object,
+  }),
+  onPress: PropTypes.func,
+  isFirst: PropTypes.bool,
+  isLast: PropTypes.bool,
+};
 
 export default BackroomSegment;
