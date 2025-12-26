@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Circle, Group, Layer, Stage, Text } from 'react-konva';
 import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import TexturePolygon from '../components/TexturedPolygon';
