@@ -1,12 +1,6 @@
-// 1. Import StyleSheet and Platform
-import {
-  Dimensions,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
-import { Circle, Line, Polygon, Svg, Text as SvgText } from 'react-native-svg';
+import { Circle, Group, Layer, Stage, Text } from 'react-konva';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import TexturePolygon from '../components/TexturedPolygon';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,279 +11,152 @@ const rightCorner = 0.75;
 const doorWidth = 0.2;
 const doorHeight = 0.4;
 
-const floorColor = '#403524ff';
-
-export default function BackroomLines({
-  // eslint-disable-next-line
-  i,
-  // eslint-disable-next-line
-  p,
-  // eslint-disable-next-line
-  total,
-  // eslint-disable-next-line
+const BackroomSegment = ({
+  xOffset, // Pozycja X tego segmentu w kontenerze rodzica (np. 0, width, 2*width)
   title,
-  // eslint-disable-next-line
+  images = {},
   onPress,
-  // eslint-disable-next-line
-  svgWidth,
-}) {
-  const isFirst = p === 0;
-  const isLast = p === total - 1;
+  isFirst,
+  isLast,
+}) => {
+  // Współrzędne wewnątrz Stage są lokalne (0 do width), nie dodajemy już xOffset do punktów wielokątów!
+  const w = width;
+  const h = height;
 
-  // --- Dynamic Style Variables ---
-  // These must stay here as they depend on props (i)
-  const doorX = width * (i + 0.5 - doorWidth / 2);
-  const doorY = height * (floorHeight - doorHeight);
-  const doorW = width * doorWidth;
-  const doorH = height * doorHeight;
+  // --- GEOMETRIA (Lokalna) ---
+  const bx1 = isFirst ? w * leftCorner : 0;
+  const bx2 = isLast ? w * rightCorner : w;
 
-  const canvasWidth = svgWidth || width;
+  const backLeft = [bx1, h * floorHeight];
+  const backRight = [bx2, h * floorHeight];
+  const backTopLeft = [bx1, h * ceilHeight];
+  const backTopRight = [bx2, h * ceilHeight];
 
-  const handlePress = e => {
-    if (Platform.OS === 'web' && e?.target?.blur) {
-      e.target.blur();
-    }
-    if (onPress) {
-      onPress();
-    }
-  };
+  const screenBottomLeft = [0, h];
+  const screenBottomRight = [w, h];
+  const screenTopLeft = [0, 0];
+  const screenTopRight = [w, 0];
+
+  const floorPoints = [
+    screenBottomLeft,
+    backLeft,
+    backRight,
+    screenBottomRight,
+  ];
+  const ceilPoints = [screenTopLeft, backTopLeft, backTopRight, screenTopRight];
+  const backWallPoints = [backTopLeft, backLeft, backRight, backTopRight];
+
+  const leftWallPoints = isFirst
+    ? [screenTopLeft, screenBottomLeft, backLeft, backTopLeft]
+    : null;
+  const rightWallPoints = isLast
+    ? [screenTopRight, screenBottomRight, backRight, backTopRight]
+    : null;
+
+  // --- GEOMETRIA DRZWI ---
+  const dX = w * (0.5 - doorWidth / 2); // Środek lokalny
+  const dY = h * (floorHeight - doorHeight);
+  const dW = w * doorWidth;
+  const dH = h * doorHeight;
+  const doorPoints = [
+    [dX, dY],
+    [dX, dY + dH],
+    [dX + dW, dY + dH],
+    [dX + dW, dY],
+  ];
 
   return (
-    <View
-      style={styles.container} // Use StyleSheet
-      pointerEvents="box-none"
-    >
-      <Svg
-        height={height}
-        width={canvasWidth}
-        pointerEvents="none"
-        style={styles.svg} // Use StyleSheet
-      >
-        {isFirst ? (
-          <>
-            <Polygon
-              points={`${width * (i + leftCorner)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height} 
-            ${width * i},${height}`}
-              fill={floorColor}
+    // Główny kontener pozycjonowany absolutnie w Animated.View
+    <View style={[styles.container, { left: xOffset }]}>
+      {/* WARSTWA 1: GRAFIKA (Stage per segment) */}
+      <Stage width={w} height={h} style={styles.stage}>
+        <Layer>
+          <Group>
+            <TexturePolygon
+              points={floorPoints}
+              image={images.floor}
+              brightness={1}
             />
-            <Line
-              x1={width * (i + leftCorner)}
-              y1={height * floorHeight}
-              x2={width * (i + 0.5)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
+            <TexturePolygon
+              points={ceilPoints}
+              image={images.ceil}
+              brightness={0.7}
             />
-            <Line
-              x1={width * i}
-              y1={height}
-              x2={width * (i + leftCorner)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
+            {leftWallPoints && (
+              <TexturePolygon
+                points={leftWallPoints}
+                image={images.wall}
+                brightness={0.8}
+              />
+            )}
+            {rightWallPoints && (
+              <TexturePolygon
+                points={rightWallPoints}
+                image={images.wall}
+                brightness={0.8}
+              />
+            )}
+            <TexturePolygon
+              points={backWallPoints}
+              image={images.wall}
+              brightness={0.6}
             />
-            <Line
-              x1={width * (i + leftCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + leftCorner)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * i}
-              y1={0}
-              x2={width * (i + leftCorner)}
-              y2={height * ceilHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + leftCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + 0.5)}
-              y2={height * ceilHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-          </>
-        ) : (
-          <>
-            <Polygon
-              points={`${width * i},${height * floorHeight} 
-            ${width * (i + 0.51)},${height * floorHeight} 
-            ${width * (i + 0.51)},${height} 
-            ${width * i},${height}`}
-              fill={floorColor}
-            />
-            <Line
-              x1={width * i}
-              y1={height * floorHeight}
-              x2={width * (i + 0.5)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * i}
-              y1={height * ceilHeight}
-              x2={width * (i + 0.5)}
-              y2={height * ceilHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-          </>
-        )}
-        {isLast ? (
-          <>
-            <Polygon
-              points={`${width * (i + 0.5)},${height * floorHeight} 
-            ${width * (i + rightCorner)},${height * floorHeight} 
-            ${width * (i + 1)},${height} 
-            ${width * (i + 0.5)},${height}`}
-              fill={floorColor}
-            />
-            <Line
-              x1={width * (i + 0.5)}
-              y1={height * floorHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + rightCorner)}
-              y1={height * floorHeight}
-              x2={width * (i + 1)}
-              y2={height}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + rightCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + 0.5)}
-              y1={height * ceilHeight}
-              x2={width * (i + rightCorner)}
-              y2={height * ceilHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + rightCorner)}
-              y1={height * ceilHeight}
-              x2={width * (i + 1)}
-              y2={0}
-              stroke="white"
-              strokeWidth={2}
-            />
-          </>
-        ) : (
-          <>
-            <Polygon
-              points={`${width * (i + 0.5)},${height * floorHeight} 
-            ${width * (i + 1)},${height * floorHeight} 
-            ${width * (i + 1)},${height} 
-            ${width * (i + 0.5)},${height}`}
-              fill={floorColor}
-            />
-            <Line
-              x1={width * (i + 0.5)}
-              y1={height * floorHeight}
-              x2={width * (i + 1)}
-              y2={height * floorHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-            <Line
-              x1={width * (i + 0.5)}
-              y1={height * ceilHeight}
-              x2={width * (i + 1)}
-              y2={height * ceilHeight}
-              stroke="white"
-              strokeWidth={2}
-            />
-          </>
-        )}
-        <Line
-          x1={width * (i + 0.5 - doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 - doorWidth / 2)}
-          y2={height * floorHeight}
-          stroke="white"
-          strokeWidth={2}
-        />
-        <Line
-          x1={width * (i + 0.5 + doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 + doorWidth / 2)}
-          y2={height * floorHeight}
-          stroke="white"
-          strokeWidth={2}
-        />
-        <Line
-          x1={width * (i + 0.5 - doorWidth / 2)}
-          y1={height * (floorHeight - doorHeight)}
-          x2={width * (i + 0.5 + doorWidth / 2)}
-          y2={height * (floorHeight - doorHeight)}
-          stroke="white"
-          strokeWidth={2}
-        />
-        <SvgText
-          x={width * (i + 0.5)}
-          y={height * 0.35}
-          fontSize={24}
-          fill={'white'}
-          textAnchor="middle"
-          fontFamily="Arial"
-        >
-          {title}
-        </SvgText>
-        <Circle cx={width * (i + 0.55)} cy={height * 0.5} r={5} fill="white" />
-      </Svg>
 
+            <TexturePolygon
+              points={doorPoints}
+              image={images.door}
+              brightness={0.9}
+            />
+
+            <Text
+              x={0}
+              y={h * 0.35}
+              width={w}
+              text={title}
+              fontSize={24}
+              fontFamily="Arial"
+              fill="white"
+              align="center"
+              listening={false}
+            />
+            <Circle
+              x={w * 0.55}
+              y={h * 0.5}
+              radius={5}
+              fill="white"
+              listening={false}
+            />
+          </Group>
+        </Layer>
+      </Stage>
+
+      {/* WARSTWA 2: INTERAKCJA (Pressable nałożony na drzwi) */}
       <Pressable
-        onPress={handlePress}
-        accessibilityRole="button"
-        // Use array to combine static styles from StyleSheet
-        // with dynamic styles calculated in the component.
-        style={[
-          styles.pressable,
-          {
-            left: doorX,
-            top: doorY,
-            width: doorW,
-            height: doorH,
-          },
-        ]}
+        style={{
+          position: 'absolute',
+          left: dX,
+          top: dY,
+          width: dW,
+          height: dH,
+          // backgroundColor: 'rgba(255,0,0,0.3)', // Debug: odkomentuj by widzieć przycisk
+        }}
+        onPress={onPress}
       />
     </View>
   );
-}
+};
 
-// --- StyleSheet ---
 const styles = StyleSheet.create({
   container: {
+    position: 'absolute',
+    top: 0,
     width: width,
     height: height,
   },
-  svg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    overflow: 'visible',
-  },
-  pressable: {
-    position: 'absolute',
-    zIndex: 999,
-    // backgroundColor: 'rgba(255, 0, 0, 0.4)',
+  stage: {
+    width: width,
+    height: height,
   },
 });
+
+export default BackroomSegment;
