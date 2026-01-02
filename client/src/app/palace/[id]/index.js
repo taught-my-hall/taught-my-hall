@@ -18,6 +18,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import useImage from 'use-image';
+import AppMenu from '../../../components/AppMenu';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
 import { textures } from '../../../utils/textures';
@@ -469,6 +470,7 @@ function PalaceScreen() {
       >
         <Text style={style.reviewButtonText}>Review</Text>
       </Pressable>
+      <AppMenu />
       <Vignette isOpened={isFurnitureOpen}>
         <FurnitureScreen />
       </Vignette>
