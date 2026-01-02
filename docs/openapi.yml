@@ -13,10 +13,8 @@ tags:
     description: User registration and login
   - name: Palaces
     description: Palace management
-  - name: Rooms
-    description: Room management within palaces
   - name: Furniture
-    description: Furniture management within rooms
+    description: Furniture management within palaces
   - name: Flashcards
     description: Flashcard management and spaced repetition
 
@@ -176,9 +174,9 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /palaces/{id}:
+  /palaces/{palaceId}:
     parameters:
-      - name: id
+      - name: palaceId
         in: path
         required: true
         schema:
@@ -235,8 +233,7 @@ paths:
         - Palaces
       description: |
         Deletes a palace and all data related to it.
-        That means it deletes all rooms inside of that palace, 
-        all furniture inside of these rooms and all flashcards of these furniture.
+        That means it deletes all furniture inside of that palace and all flashcards of these furniture.
       responses:
         '204':
           $ref: "#/components/responses/DeletedSuccessfully"
@@ -245,7 +242,7 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
-  /palaces/{palaceId}/rooms:
+  /palaces/{palaceId}/furniture:
     parameters:
       - name: palaceId
         in: path
@@ -254,137 +251,7 @@ paths:
           type: integer
 
     get:
-      summary: List all rooms inside palace
-      tags:
-        - Rooms
-      responses:
-        '200':
-          description: Successfully listed rooms
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Room"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-        '404':
-          $ref: "#/components/responses/NotFoundError"
-
-    post:
-      summary: Creates new room inside palace
-      tags:
-        - Rooms
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              required:
-                - name
-                - theme_color
-              type: object
-              properties:
-                name:
-                  $ref: "#/components/schemas/Room/properties/name"
-                theme_color:
-                  $ref: "#/components/schemas/Room/properties/theme_color"
-      responses:
-        '201':
-          description: Successfully created room
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Room"
-        '400':
-          $ref: "#/components/responses/InvalidDataError"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-        '404':
-          $ref: "#/components/responses/NotFoundError"
-        '422':
-          $ref: "#/components/responses/ValidationFailedError"
-
-  /rooms/{id}:
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-
-    get:
-      summary: Gets room
-      tags:
-        - Rooms
-      responses:
-        '200':
-          description: Successfully got room
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Room"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-        '404':
-          $ref: "#/components/responses/NotFoundError"
-
-    put:
-      summary: Updates room
-      tags:
-        - Rooms
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  $ref: "#/components/schemas/Room/properties/name"
-                theme_color:
-                  $ref: "#/components/schemas/Room/properties/theme_color"
-      responses:
-        '200':
-          description: Successfully updated room
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Room"
-        '400':
-          $ref: "#/components/responses/InvalidDataError"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-        '404':
-          $ref: "#/components/responses/NotFoundError"
-        '422':
-          $ref: "#/components/responses/ValidationFailedError"
-
-    delete:
-      summary: Deletes room and all related data
-      tags:
-        - Rooms
-      description: |
-        Deletes a room and all data related to it.
-        That means it deletes all furniture inside of the room and all flashcards inside of these furniture.
-      responses:
-        '204':
-          $ref: "#/components/responses/DeletedSuccessfully"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-        '404':
-          $ref: "#/components/responses/NotFoundError"
-
-  /rooms/{roomId}/furniture:
-    parameters:
-      - name: roomId
-        in: path
-        required: true
-        schema:
-          type: integer
-
-    get:
-      summary: Lists all furniture inside room
+      summary: Lists all furniture inside palace
       tags:
         - Furniture
       responses:
@@ -402,7 +269,7 @@ paths:
           $ref: "#/components/responses/NotFoundError"
 
     post:
-      summary: Creates new furniture inside room
+      summary: Creates new furniture inside palace
       tags:
         - Furniture
       requestBody:
@@ -413,12 +280,21 @@ paths:
               required:
                 - name
                 - description
+                - position_x
+                - position_y
+                - image_url
               type: object
               properties:
                 name:
                   $ref: "#/components/schemas/Furniture/properties/name"
                 description:
                   $ref: "#/components/schemas/Furniture/properties/description"
+                position_x:
+                  $ref: "#/components/schemas/Furniture/properties/position_x"
+                position_y:
+                  $ref: "#/components/schemas/Furniture/properties/position_y"
+                image_url:
+                  $ref: "#/components/schemas/Furniture/properties/image_url"
       responses:
         '201':
           description: Successfully created furniture
@@ -435,9 +311,9 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /furniture/{id}:
+  /furniture/{furnitureId}:
     parameters:
-      - name: id
+      - name: furnitureId
         in: path
         required: true
         schema:
@@ -474,6 +350,12 @@ paths:
                   $ref: "#/components/schemas/Furniture/properties/name"
                 description:
                   $ref: "#/components/schemas/Furniture/properties/description"
+                position_x:
+                  $ref: "#/components/schemas/Furniture/properties/position_x"
+                position_y:
+                  $ref: "#/components/schemas/Furniture/properties/position_y"
+                image_url:
+                  $ref: "#/components/schemas/Furniture/properties/image_url"
       responses:
         '200':
           description: Successfully updated furniture
@@ -504,6 +386,31 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
+  /palace/{palaceId}/flashcards:
+    get:
+      summary: Lists all user's flashcards from palace. Used to palace review
+      tags:
+        - Flashcards
+      parameters:
+        - in: query
+          name: onlyInReview
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: If true, lists only flashcards that should be reviewed, that means have next review time before now.
+      responses:
+        '200':
+          description: Successfully listed flashcards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flashcard"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+
   /furniture/{furnitureId}/flashcards:
     parameters:
       - name: furnitureId
@@ -513,7 +420,7 @@ paths:
           type: integer
 
     get:
-      summary: Lists all flashcards inside furniture
+      summary: Lists all flashcards inside furniture. Used to show grid of flashcards when opening furniture.
       tags:
         - Flashcards
       responses:
@@ -567,34 +474,9 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /flashcards:
-    get:
-      summary: Lists all user's flashcards
-      tags:
-        - Flashcards
-      parameters:
-        - in: query
-          name: onlyInReview
-          schema:
-            type: boolean
-            default: false
-          required: false
-          description: If true, lists only flashcards that should be reviewed, that means have next review time before now.
-      responses:
-        '200':
-          description: Successfully listed flashcards
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Flashcard"
-        '401':
-          $ref: "#/components/responses/UnauthorizedError"
-
-  /flashcards/{id}:
+  /flashcards/{flashcardId}:
     parameters:
-      - name: id
+      - name: flashcardId
         in: path
         required: true
         schema:
@@ -661,9 +543,9 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
-  /flashcards/{id}/review:
+  /flashcards/{flashcardId}/review:
     parameters:
-      - name: id
+      - name: flashcardId
         in: path
         required: true
         schema:
@@ -703,7 +585,6 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-
 components:
   schemas:
     Palace:
@@ -711,6 +592,9 @@ components:
       required:
         - id
         - name
+        - palace_matrix
+        - created_at
+        - updated_at
       properties:
         id:
           type: integer
@@ -720,41 +604,14 @@ components:
           example: Palace of History
           minLength: 1
           maxLength: 80
-        # TODO: maybe in the future
-        # rooms:
-        #   description: Optionally preloaded rooms
-        #   type: [array, 'null']
-        #   example: null
-        #   items:
-        #     $ref: "#/components/schemas/Room"
-
-    Room:
-      type: object
-      required:
-        - id
-        - name
-        - theme_color
-      properties:
-        id:
-          type: integer
-          example: 1
-        name: 
+        created_at:
           type: string
-          example: World War II Room
-          minLength: 1
-          maxLength: 80
-        theme_color:
-          description: Theme color used around the room, e.g. in rooms arranger screen
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
+        updated_at:
           type: string
-          pattern: '^#[0-9a-fA-F]{6}$'
-          example: "#f8a000"
-        # TODO: maybe in the future
-        # furniture:
-        #   description: Optionally preloaded furniture
-        #   type: [array, 'null']
-        #   example: null
-        #   items:
-        #     $ref: "#/components/schemas/Furniture"
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
 
     Furniture:
       type: object
@@ -762,6 +619,8 @@ components:
         - id
         - name
         - description
+        - created_at
+        - updated_at
       properties:
         id:
           type: integer
@@ -776,22 +635,39 @@ components:
           example: It all happend in Poland after...
           minLength: 0
           maxLength: 500
-        # TODO: maybe in the future
-        # flashcards:
-        #   description: Optionally preloaded flashcards
-        #   type: [array, 'null']
-        #   example: null
-        #   items:
-        #     $ref: "#/components/schemas/Flashcard"
+        position_x:
+          type: integer
+          example: 1
+          description: X position on the palace board
+        position_y:
+          type: integer
+          example: 1
+          description: Y position on the palace board
+        image_url:
+          type: string
+          description: URL of the image (likely SVG) symbolising the furniture
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
 
     Flashcard:
       type: object
-      description: Doesn't have to expose all database fields like `ease_factor` or `repetition` because frontend doesn't take it into account.
       required:
         - id
         - front
         - back
+        - interval
+        - ease_factor
+        - repetition
+        - next_review
         - furniture_slot_index
+        - created_at
+        - updated_at
       properties:
         id:
           type: integer
@@ -808,25 +684,33 @@ components:
           minLength: 1
           maxLength: 2000
           example: Paris
-        # interval:
-        #   type: integer
-        #   example: 1
-        # ease_factor:
-        #   type: number
-        #   example: 2.5
-        # repetition:
-        #   type: integer
-        #   example: 1
-        # next_review:
-        #   type: string
-        #   format: date-time
-        #   example: 2025-12-06 10:09:56.211617+00
+        interval:
+          type: integer
+          example: 1
+        ease_factor:
+          type: number
+          example: 2.5
+        repetition:
+          type: integer
+          example: 1
+        next_review:
+          type: string
+          format: date-time
+          example: 2025-12-06 10:09:56.211617+00
         furniture_slot_index:
           description: Index of placement inside furniture
           type: integer
           minimum: 0
           maximum: 8
           example: 3
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-12-06T10:09:56.211617Z"
         
   securitySchemes:
     BearerAuth:
@@ -834,6 +718,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token obtained from /auth/login or /auth/register
+
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
