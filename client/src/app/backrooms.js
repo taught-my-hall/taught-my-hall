@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
-import AppMenu from '../components/AppMenu';
 import { apiClient } from '../../services/apiClient';
+import AppMenu from '../components/AppMenu';
 import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
