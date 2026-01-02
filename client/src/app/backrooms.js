@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
+import AppMenu from '../components/AppMenu';
 import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
@@ -107,8 +108,10 @@ export default function BackroomScreen() {
           </Text>
         </Pressable>
       )}
+      <AppMenu />
+
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
-        <Text style={{ fontSize: 24, color: '#FFF' }}>New Palace</Text>
+        <Text style={styles.reviewButtonText}>New Palace</Text>
       </Pressable>
       <Vignette isOpened={isNewPalaceOpen}>
         <PalaceList />
@@ -159,6 +162,11 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
+    zIndex: 200,
+  },
+
+  reviewButtonText: {
+    fontSize: 24,
+    color: '#FFF',
   },
 });
