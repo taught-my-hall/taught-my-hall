@@ -2,12 +2,8 @@ import { useQueue } from '@uidotdev/usehooks';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { fetchQuestions } from '../../../../services/palaceData';
+import { apiClient } from '../../../../services/apiClient';
 
-let questionIdCounter = 1;
-
-// Simulates telling backend whether user knows or
-// doesn't know the question
 const fakeValidate = async (questionId, knows) => {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -36,11 +32,14 @@ export default function ReviewScreen() {
     setIsLoading(true);
     setError('');
 
+    let furnitureId = 1;
     try {
-      const data = await fetchQuestions();
+      const data = await apiClient(`/api/furniture/${furnitureId}/`, {
+        method: 'GET',
+      });
 
-      if (data.questions && data.questions.length > 0) {
-        for (const question of data.questions) {
+      if (data.flashcards && data.flashcards.length > 0) {
+        for (const question of data.flashcards) {
           pushQuestion(question);
         }
       } else {
