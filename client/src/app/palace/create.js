@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import {
   Animated,
-  Dimensions,
   PanResponder,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions, // 1. Import hook
   View,
 } from 'react-native';
 import { setTempPalaceMatrix } from '../../utils/tempData';
@@ -108,10 +108,11 @@ export default function PalaceCreatorScreen() {
   const boundsRef = useRef(INITIAL_BOUNDS);
   const panVal = useRef({ x: 0, y: 0 });
 
-  const window = Dimensions.get('window');
+  const window = useWindowDimensions();
 
   const initialWidth = 20 * CELL_TOTAL;
   const initialHeight = 20 * CELL_TOTAL;
+
   const initialCamX = (window.width - initialWidth) / 2;
   const initialCamY = (window.height - initialHeight) / 2;
 
@@ -188,7 +189,9 @@ export default function PalaceCreatorScreen() {
   };
 
   useEffect(() => {
+    pan.setValue({ x: initialCamX, y: initialCamY });
     panVal.current = { x: initialCamX, y: initialCamY };
+
     const id = pan.addListener(value => {
       panVal.current = value;
     });
