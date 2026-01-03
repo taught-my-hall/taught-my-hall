@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { setTempPalaceMatrix } from '../../utils/tempData';
+import { getTempPalaceMatrix, setTempPalaceMatrix } from '../../utils/tempData';
 
 const CELL_SIZE = 40;
 const GAP_SIZE = 2;
@@ -90,6 +90,23 @@ const isNeighbor = (targetR, targetC, roomCells) => {
   );
 };
 
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    if (delay !== null) {
+      const id = setInterval(() => {
+        savedCallback.current();
+      }, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
+
 export default function PalaceCreatorScreen() {
   const router = useRouter();
   const [rooms, setRooms] = useState([]);
@@ -98,6 +115,8 @@ export default function PalaceCreatorScreen() {
 
   const [selectedCells, setSelectedCells] = useState({});
   const selectedCellsRef = useRef({});
+  const furnitureRef = useRef({});
+  const matrixFlag = useRef(false);
 
   // --- Notification State ---
   const [notification, setNotification] = useState(null);
@@ -122,6 +141,80 @@ export default function PalaceCreatorScreen() {
   useEffect(() => {
     selectedCellsRef.current = selectedCells;
   }, [selectedCells]);
+
+  useEffect(() => {
+    const savedMatrix = getTempPalaceMatrix();
+
+    if (!savedMatrix || savedMatrix.length === 0) return;
+
+    const newSelectedCells = {};
+    const foundRooms = new Map();
+    const loadedFurniture = {};
+
+    let minR = Infinity;
+    let maxR = -Infinity;
+    let minC = Infinity;
+    let maxC = -Infinity;
+
+    savedMatrix.forEach((row, rIndex) => {
+      row.forEach((cellString, cIndex) => {
+        const parts = cellString.split('_');
+        const roomId = parts[0];
+        const furnitureItem = parts[1];
+
+        if (roomId !== '0') {
+          const key = `${rIndex},${cIndex}`;
+          newSelectedCells[key] = roomId;
+
+          if (rIndex < minR) minR = rIndex;
+          if (rIndex > maxR) maxR = rIndex;
+          if (cIndex < minC) minC = cIndex;
+          if (cIndex > maxC) maxC = cIndex;
+
+          if (furnitureItem) {
+            loadedFurniture[key] = furnitureItem;
+          }
+
+          if (!foundRooms.has(roomId)) {
+            foundRooms.set(roomId, {
+              id: roomId,
+              name: `Room ${roomId}`,
+              color: generateRandomColor(),
+              x: 0,
+              y: 0,
+              w: 0,
+              h: 0,
+            });
+          }
+        }
+      });
+    });
+
+    if (foundRooms.size > 0) {
+      setRooms(Array.from(foundRooms.values()));
+      setSelectedCells(newSelectedCells);
+      furnitureRef.current = loadedFurniture;
+
+      const PADDING = 5;
+
+      const currentBounds = boundsRef.current;
+
+      const newBounds = {
+        minY: Math.min(currentBounds.minY, minR - PADDING),
+        maxY: Math.max(currentBounds.maxY, maxR + PADDING),
+        minX: Math.min(currentBounds.minX, minC - PADDING),
+        maxX: Math.max(currentBounds.maxX, maxC + PADDING),
+      };
+
+      boundsRef.current = newBounds;
+      setBounds(newBounds);
+    }
+  }, []);
+
+  useInterval(() => {
+    console.log('Autosave');
+    setTempPalaceMatrix(getGridMatrix());
+  }, 5000);
 
   // --- Notification Helper ---
   const showNotification = message => {
@@ -370,25 +463,33 @@ export default function PalaceCreatorScreen() {
     let cBoundMin = 100;
     let cBoundMax = -100;
     const places = [];
+
     Object.keys(selectedCells).forEach(key => {
       const val = selectedCells[key];
       let [r, c] = key.split(',').map(Number);
-      places.push([r, c, val]);
+      const savedFurniture = furnitureRef.current[key] || '';
+
+      places.push([r, c, val, savedFurniture]);
+
       if (r < rBoundMin) rBoundMin = r;
       if (r > rBoundMax) rBoundMax = r;
       if (c < cBoundMin) cBoundMin = c;
       if (c > cBoundMax) cBoundMax = c;
     });
+
     if (places.length === 0) return [];
+
     const matrix = Array.from(
       { length: Math.abs(rBoundMax - rBoundMin + 1) },
       () =>
         Array.from({ length: Math.abs(cBoundMax - cBoundMin + 1) }, () => '0__')
     );
+
     places.map(place => {
-      let [r, c, v] = place;
-      matrix[r - rBoundMin][c - cBoundMin] = v + '__';
+      let [r, c, v, furn] = place;
+      matrix[r - rBoundMin][c - cBoundMin] = `${v}_${furn}`;
     });
+
     console.log(matrix);
     return matrix;
   };
