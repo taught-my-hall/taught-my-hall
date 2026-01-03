@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
@@ -21,6 +21,10 @@ import useImage from 'use-image';
 import AppMenu from '../../../components/AppMenu';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
+import {
+  setTempPalaceMatrix,
+  setTempPalaceRoute,
+} from '../../../utils/tempData';
 import { textures } from '../../../utils/textures';
 import FurnitureScreen from '../../furniture';
 
@@ -121,6 +125,7 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 
 function PalaceScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -470,7 +475,24 @@ function PalaceScreen() {
       >
         <Text style={style.reviewButtonText}>Review</Text>
       </Pressable>
-      <AppMenu />
+      <AppMenu
+        buttons={[
+          [
+            'Edit',
+            () => {
+              setTempPalaceMatrix(PALACE_MAP_RAW);
+              setTempPalaceRoute(pathname);
+              router.navigate('/palace/create');
+            },
+          ],
+          [
+            'Back',
+            () => {
+              router.navigate('/backrooms');
+            },
+          ],
+        ]}
+      />
       <Vignette isOpened={isFurnitureOpen}>
         <FurnitureScreen />
       </Vignette>

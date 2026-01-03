@@ -1,10 +1,16 @@
-let tempPalaceMatrix = null;
-
 export const setTempPalaceMatrix = matrix => {
-  tempPalaceMatrix = matrix;
-  console.log(tempPalaceMatrix);
+  localStorage.setItem('tempPalaceMatrix', JSON.stringify(matrix));
 };
 
 export const getTempPalaceMatrix = () => {
-  return tempPalaceMatrix;
+  const res = localStorage.getItem('tempPalaceMatrix');
+  return res ? JSON.parse(res) : null;
+};
+
+export const setTempPalaceRoute = route => {
+  localStorage.setItem('tempPalaceRoute', route);
+};
+
+export const getTempPalaceRoute = () => {
+  return localStorage.getItem('tempPalaceRoute');
 };
