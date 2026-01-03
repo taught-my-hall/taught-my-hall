@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,8 +9,9 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
-import useImage from 'use-image';
-import BackroomSegment from '../components/BackroomLines';
+import { apiClient } from '../../services/apiClient';
+import AppMenu from '../components/AppMenu';
+import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
 import { textures } from '../utils/textures';
@@ -21,18 +22,31 @@ const svgWidth = width * 3;
 export default function BackroomScreen() {
   const router = useRouter();
   const isNewPalaceOpen = useSharedValue(false);
-  const [rooms, setRooms] = useState([
-    { title: 'Create new room' },
-    { title: 'Room 1' },
-    { title: 'Room 2' },
-    { title: 'Room 3' },
-  ]);
+
+  const [palaces, setPalaces] = useState([]);
+
   const [pointer, setPointer] = useState(0);
   const [pointerBefore, setPointerBefore] = useState(0);
-
   const offset = useRef(new Animated.Value(0)).current;
 
-  const pointedRooms = [pointer - 1, pointer, pointer + 1];
+  const fetchPalaceList = useCallback(async () => {
+    try {
+      const data = await apiClient('/api/palaces/', {
+        method: 'GET',
+      });
+      if (data) {
+        setPalaces(data);
+      }
+    } catch (err) {
+      console.error('Failed to load palaces:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPalaceList();
+  }, [fetchPalaceList]);
+
+  const pointedIndices = [pointer - 1, pointer, pointer + 1];
 
   const [imgWall1] = useImage(textures.wall1);
   const [imgWall2] = useImage(textures.wall2);
@@ -65,21 +79,21 @@ export default function BackroomScreen() {
       setPointer(prev =>
         direction < 0
           ? Math.max(prev - 1, 0)
-          : Math.min(prev + 1, rooms.length - 1)
+          : Math.min(prev + 1, palaces.length - 1)
       );
       offset.setValue(0);
     });
   };
 
-  const roomLeft = () => {
+  const moveLeft = () => {
     setPointerBefore(prev => Math.max(prev - 1, 0));
     if (pointer === 0) return;
     animateMove(-1);
   };
 
-  const roomRight = () => {
-    setPointerBefore(prev => Math.min(prev + 1, rooms.length - 1));
-    if (pointer === rooms.length - 1) return;
+  const moveRight = () => {
+    setPointerBefore(prev => Math.min(prev + 1, palaces.length - 1));
+    if (pointer === palaces.length - 1) return;
     animateMove(1);
   };
 
@@ -94,25 +108,28 @@ export default function BackroomScreen() {
       >
         {/* ZMIANA: Usunięto Stage i Layer. Mamy zwykły View jako kontener */}
         <View style={{ width: svgWidth, height: height }}>
-          {pointedRooms.map((p, i) => {
-            if (p < 0 || p >= rooms.length) return null;
+          {pointedIndices.map((p, i) => {
+            if (p < 0 || p >= palaces.length) return null;
 
-            const isFirstRoom = p === 0;
-            const isLastRoom = p === rooms.length - 1;
+            const currentPalace = palaces[p];
 
             return (
-              <BackroomSegment
-                key={`room-${p}`}
-                xOffset={i * width}
-                title={rooms[p].title}
-                images={textureConfig}
-                isFirst={isFirstRoom}
-                isLast={isLastRoom}
-                onPress={() => {
-                  console.log('Kliknięto pokój:', rooms[p].title);
-                  router.navigate('/palace/TODO');
-                }}
-              />
+              <View
+                key={i}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="box-none"
+              >
+                <BackroomLines
+                  onPress={() => {
+                    router.navigate('/palace/TODO');
+                  }}
+                  i={i}
+                  p={p}
+                  total={palaces.length}
+                  title={currentPalace.name}
+                  svgWidth={svgWidth}
+                />
+              </View>
             );
           })}
         </View>
@@ -120,22 +137,23 @@ export default function BackroomScreen() {
 
       {/* Przyciski nawigacyjne */}
       {pointerBefore !== 0 && (
-        <Pressable style={[styles.button, { left: 0 }]} onPress={roomLeft}>
+        <Pressable style={[styles.button, { left: 0 }]} onPress={moveLeft}>
           <Text selectable={false} style={styles.buttonText}>
             {'<'}
           </Text>
         </Pressable>
       )}
-      {pointerBefore !== rooms.length - 1 && (
-        <Pressable style={[styles.button, { right: 0 }]} onPress={roomRight}>
+      {pointerBefore !== palaces.length - 1 && (
+        <Pressable style={[styles.button, { right: 0 }]} onPress={moveRight}>
           <Text selectable={false} style={styles.buttonText}>
             {'>'}
           </Text>
         </Pressable>
       )}
+      <AppMenu />
 
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
-        <Text style={{ fontSize: 24, color: '#FFF' }}>New Palace</Text>
+        <Text style={styles.reviewButtonText}>New Palace</Text>
       </Pressable>
 
       <Vignette isOpened={isNewPalaceOpen}>
@@ -185,5 +203,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 200,
+  },
+
+  reviewButtonText: {
+    fontSize: 24,
+    color: '#FFF',
   },
 });
