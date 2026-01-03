@@ -75,6 +75,12 @@ class FurnitureViewSet(viewsets.ModelViewSet):
 
     DELETE /furniture/<id>/
         - Deletes a furniture item.
+
+    GET /furniture/<id>/flashcards/
+        - Returns all flashcards belonging to this furniture.
+
+    POST /furniture/<id>/add_flashcard/
+        - Creates a new flashcard for this furniture.
     """
     
     serializer_class = FurnitureSerializer
@@ -110,6 +116,19 @@ class FurnitureViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
+
+    @action(detail=True, methods=["get"])
+    def flashcards(self, request, pk=None):
+        """
+        GET /furniture/<id>/flashcards/
+        Returns all flashcards associated with this specific furniture.
+        """
+        furniture = self.get_object()  # This checks user permission automatically via get_queryset
+
+        # Fetch flashcards linked to this furniture
+        cards = Flashcard.objects.filter(furniture=furniture)
+
+        return Response(FlashcardSerializer(cards, many=True).data)
 
 
 
