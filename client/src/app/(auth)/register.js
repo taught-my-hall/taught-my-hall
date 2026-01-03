@@ -1,56 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  form: {
-    width: '100%',
-    maxWidth: 400,
-    padding: 16,
-  },
-  heading: {
-    fontSize: 36,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  label: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 2,
-    marginBottom: 8,
-  },
-  input: {
-    fontSize: 16,
-    fontWeight: '500',
-    height: 40,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    marginBottom: 16,
-  },
-  smallLink: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
-    textDecorationLine: 'underline',
-    marginTop: 16,
-    alignSelf: 'center',
-  },
-  errorText: {
-    color: '#ff4d4d',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-});
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+// Import the service we just created
+import { registerUser } from '../../../services/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -60,7 +19,6 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleRegister = async () => {
@@ -84,39 +42,15 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          name: name,
-          email: email,
-          password: password,
-        }),
-      });
+      const data = await registerUser(name, email, password);
 
-      let data;
-
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        // fallback if response isn't JSON
-        data = { message: await response.text() };
+      if (data.token && typeof localStorage !== 'undefined') {
+        localStorage.setItem('authToken', data.token);
       }
 
-      if (response.ok) {
-        //TODO save token before going into backrooms
-        router.navigate('/backrooms');
-      } else {
-        const backendError =
-          data.message || JSON.stringify(data) || 'Registration failed';
-        setErrorMessage(backendError);
-      }
+      router.navigate('/backrooms');
     } catch (error) {
-      console.error(error);
-      setErrorMessage(`Network request failed: ${error.message}`);
+      setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -175,11 +109,17 @@ export default function RegisterScreen() {
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
 
-        <Button
-          title={isLoading ? 'Creating...' : 'Create Account'}
+        <Pressable
+          style={styles.registerButton}
           onPress={handleRegister}
           disabled={isLoading}
-        />
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.registerButtonText}>Create Account</Text>
+          )}
+        </Pressable>
 
         <Text
           style={styles.smallLink}
@@ -191,3 +131,66 @@ export default function RegisterScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  form: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 16,
+  },
+  heading: {
+    fontSize: 36,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  label: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 2,
+    marginBottom: 8,
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: '500',
+    height: 40,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    marginBottom: 16,
+  },
+  smallLink: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#fff',
+    textDecorationLine: 'underline',
+    marginTop: 16,
+    alignSelf: 'center',
+  },
+  errorText: {
+    color: '#ff4d4d',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  registerButton: {
+    backgroundColor: '#2196F3',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    borderRadius: 4,
+  },
+  registerButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+});

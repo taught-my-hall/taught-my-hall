@@ -9,10 +9,11 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
-import { useImage } from 'use-image';
+import useImage from 'use-image';
+
+// Adjust this path if your file is actually in utils
 import { apiClient } from '../../services/apiClient';
-import AppMenu from '../components/AppMenu';
-import BackroomLines from '../components/BackroomLines';
+import BackroomSegment from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
 import { textures } from '../utils/textures';
@@ -25,9 +26,9 @@ export default function BackroomScreen() {
   const isNewPalaceOpen = useSharedValue(false);
 
   const [palaces, setPalaces] = useState([]);
-
   const [pointer, setPointer] = useState(0);
   const [pointerBefore, setPointerBefore] = useState(0);
+
   const offset = useRef(new Animated.Value(0)).current;
 
   const fetchPalaceList = useCallback(async () => {
@@ -47,8 +48,7 @@ export default function BackroomScreen() {
     fetchPalaceList();
   }, [fetchPalaceList]);
 
-  const pointedIndices = [pointer - 1, pointer, pointer + 1];
-
+  // Texture loading
   const [imgWall1] = useImage(textures.wall1);
   const [imgWall2] = useImage(textures.wall2);
   const [imgFloor] = useImage(textures.wall4);
@@ -71,6 +71,8 @@ export default function BackroomScreen() {
     door: imageMap.wood1,
   };
 
+  const pointedIndices = [pointer - 1, pointer, pointer + 1];
+
   const animateMove = direction => {
     Animated.timing(offset, {
       toValue: width * -direction,
@@ -86,13 +88,13 @@ export default function BackroomScreen() {
     });
   };
 
-  const moveLeft = () => {
+  const roomLeft = () => {
     setPointerBefore(prev => Math.max(prev - 1, 0));
     if (pointer === 0) return;
     animateMove(-1);
   };
 
-  const moveRight = () => {
+  const roomRight = () => {
     setPointerBefore(prev => Math.min(prev + 1, palaces.length - 1));
     if (pointer === palaces.length - 1) return;
     animateMove(1);
@@ -107,54 +109,55 @@ export default function BackroomScreen() {
       <Animated.View
         style={[styles.svgBox, { transform: [{ translateX: offset }] }]}
       >
-        {/* ZMIANA: Usunięto Stage i Layer. Mamy zwykły View jako kontener */}
-        <View style={{ width: svgWidth, height: height }}>
+        <View style={styles.roomsContainer}>
           {pointedIndices.map((p, i) => {
             if (p < 0 || p >= palaces.length) return null;
 
+            const isFirstRoom = p === 0;
+            const isLastRoom = p === palaces.length - 1;
             const currentPalace = palaces[p];
 
             return (
-              <View
-                key={i}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="box-none"
-              >
-                <BackroomLines
-                  onPress={() => {
-                    router.navigate('/palace/TODO');
-                  }}
-                  i={i}
-                  p={p}
-                  total={palaces.length}
-                  title={currentPalace.name}
-                  svgWidth={svgWidth}
-                />
-              </View>
+              <BackroomSegment
+                key={`palace-${currentPalace.id || p}`}
+                xOffset={i * width}
+                title={currentPalace.name}
+                images={textureConfig}
+                isFirst={isFirstRoom}
+                isLast={isLastRoom}
+                onPress={() => {
+                  router.navigate(`/palace/${currentPalace.id}`);
+                }}
+              />
             );
           })}
         </View>
       </Animated.View>
 
-      {/* Przyciski nawigacyjne */}
+      {/* Navigation Buttons */}
       {pointerBefore !== 0 && (
-        <Pressable style={[styles.button, { left: 0 }]} onPress={moveLeft}>
+        <Pressable
+          style={[styles.button, styles.buttonLeft]}
+          onPress={roomLeft}
+        >
           <Text selectable={false} style={styles.buttonText}>
             {'<'}
           </Text>
         </Pressable>
       )}
-      {pointerBefore !== palaces.length - 1 && (
-        <Pressable style={[styles.button, { right: 0 }]} onPress={moveRight}>
+      {palaces.length > 0 && pointerBefore !== palaces.length - 1 && (
+        <Pressable
+          style={[styles.button, styles.buttonRight]}
+          onPress={roomRight}
+        >
           <Text selectable={false} style={styles.buttonText}>
             {'>'}
           </Text>
         </Pressable>
       )}
-      <AppMenu />
 
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
-        <Text style={styles.reviewButtonText}>New Palace</Text>
+        <Text style={styles.newPalaceText}>New Palace</Text>
       </Pressable>
 
       <Vignette isOpened={isNewPalaceOpen}>
@@ -171,6 +174,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  roomsContainer: {
+    width: svgWidth,
+    height: height,
+  },
   button: {
     position: 'absolute',
     backgroundColor: '#8d8d8d',
@@ -179,6 +186,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
+  },
+  buttonLeft: {
+    left: 0,
+  },
+  buttonRight: {
+    right: 0,
   },
   buttonText: {
     fontSize: 48,
@@ -205,8 +218,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 200,
   },
-
-  reviewButtonText: {
+  newPalaceText: {
     fontSize: 24,
     color: '#FFF',
   },
