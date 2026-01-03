@@ -176,7 +176,7 @@ function PalaceScreen() {
       }
     });
     return () => cancelAnimationFrame(cacheHandle);
-  }, [processedTiles, imageMap]);
+  }, [processedTiles, imageMap, mapData]);
 
   const panGesture = useMemo(
     () =>
@@ -215,7 +215,7 @@ function PalaceScreen() {
       isFurnitureOpen,
       scale,
       mapData,
-    ] // Added mapData to dependencies
+    ]
   );
 
   const pinchGesture = useMemo(
@@ -252,6 +252,7 @@ function PalaceScreen() {
       translateY,
       savedTranslateX,
       savedTranslateY,
+      mapData, // Added mapData to dependencies (accessed via clampValues)
     ]
   );
 
