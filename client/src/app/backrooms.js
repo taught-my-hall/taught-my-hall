@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,11 +9,13 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
+import { useImage } from 'use-image';
 import { apiClient } from '../../services/apiClient';
 import AppMenu from '../components/AppMenu';
 import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
+import { textures } from '../utils/textures';
 
 const { width, height } = Dimensions.get('window');
 const svgWidth = width * 3;
@@ -47,18 +49,39 @@ export default function BackroomScreen() {
 
   const pointedIndices = [pointer - 1, pointer, pointer + 1];
 
+  const [imgWall1] = useImage(textures.wall1);
+  const [imgWall2] = useImage(textures.wall2);
+  const [imgFloor] = useImage(textures.wall4);
+  const [imgWood] = useImage(textures.wood3);
+
+  const imageMap = useMemo(
+    () => ({
+      wall1: imgWall1,
+      floor: imgFloor,
+      wall2: imgWall2,
+      wood1: imgWood,
+    }),
+    [imgWall1, imgWall2, imgFloor, imgWood]
+  );
+
+  const textureConfig = {
+    floor: imageMap.floor,
+    wall: imageMap.wall1,
+    ceil: imageMap.wall2,
+    door: imageMap.wood1,
+  };
+
   const animateMove = direction => {
     Animated.timing(offset, {
       toValue: width * -direction,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start(() => {
       setPointer(prev =>
         direction < 0
           ? Math.max(prev - 1, 0)
           : Math.min(prev + 1, palaces.length - 1)
       );
-
       offset.setValue(0);
     });
   };
@@ -84,6 +107,7 @@ export default function BackroomScreen() {
       <Animated.View
         style={[styles.svgBox, { transform: [{ translateX: offset }] }]}
       >
+        {/* ZMIANA: Usunięto Stage i Layer. Mamy zwykły View jako kontener */}
         <View style={{ width: svgWidth, height: height }}>
           {pointedIndices.map((p, i) => {
             if (p < 0 || p >= palaces.length) return null;
@@ -111,6 +135,8 @@ export default function BackroomScreen() {
           })}
         </View>
       </Animated.View>
+
+      {/* Przyciski nawigacyjne */}
       {pointerBefore !== 0 && (
         <Pressable style={[styles.button, { left: 0 }]} onPress={moveLeft}>
           <Text selectable={false} style={styles.buttonText}>
@@ -130,6 +156,7 @@ export default function BackroomScreen() {
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
         <Text style={styles.reviewButtonText}>New Palace</Text>
       </Pressable>
+
       <Vignette isOpened={isNewPalaceOpen}>
         <PalaceList />
       </Vignette>
@@ -144,10 +171,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    color: '#fff',
-    fontSize: 24,
-  },
   button: {
     position: 'absolute',
     backgroundColor: '#8d8d8d',
@@ -155,6 +178,7 @@ const styles = StyleSheet.create({
     height: 100,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 100,
   },
   buttonText: {
     fontSize: 48,
