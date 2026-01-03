@@ -19,6 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import useImage from 'use-image';
 import { apiClient } from '../../../../services/apiClient';
+import AppMenu from '../../../components/AppMenu';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
 import { getPalacesData } from '../../../utils/tempData';
@@ -456,6 +457,7 @@ function PalaceScreen() {
       >
         <Text style={style.reviewButtonText}>Review</Text>
       </Pressable>
+      <AppMenu />
       <Vignette isOpened={isFurnitureOpen}>
         <FurnitureScreen />
       </Vignette>
