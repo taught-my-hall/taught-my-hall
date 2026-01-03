@@ -13,6 +13,7 @@ import { apiClient } from '../../services/apiClient';
 import BackroomLines from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
+import { setPalacesData } from '../utils/tempData';
 
 const { width, height } = Dimensions.get('window');
 const svgWidth = width * 3;
@@ -34,6 +35,7 @@ export default function BackroomScreen() {
       });
       if (data) {
         setPalaces(data);
+        setPalacesData(data);
       }
     } catch (err) {
       console.error('Failed to load palaces:', err);
@@ -88,7 +90,7 @@ export default function BackroomScreen() {
             if (p < 0 || p >= palaces.length) return null;
 
             const currentPalace = palaces[p];
-
+            console.log(currentPalace.name, currentPalace.id, p, i);
             return (
               <View
                 key={i}
@@ -97,7 +99,7 @@ export default function BackroomScreen() {
               >
                 <BackroomLines
                   onPress={() => {
-                    router.navigate('/palace/TODO');
+                    router.navigate(`/palace/${currentPalace.id}`);
                   }}
                   i={i}
                   p={p}
