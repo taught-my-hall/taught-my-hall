@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
+import { useImage } from 'use-image';
 import { apiClient } from '../../services/apiClient';
 import AppMenu from '../components/AppMenu';
 import BackroomLines from '../components/BackroomLines';
