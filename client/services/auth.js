@@ -17,6 +17,31 @@ export const loginUser = async (email, password) => {
     throw new Error(`Login failed with status: ${response.status}`);
   }
 
-  const data = await response.json();
-  return data;
+  return await response.json();
+};
+
+export const registerUser = async (name, email, password) => {
+  const response = await fetch(`${API_URL}/api/auth/register/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      name: name,
+      email: email,
+      password: password,
+    }),
+  });
+
+  if (!response.ok) {
+    // Attempt to parse the backend error message if available
+    const errorData = await response.json().catch(() => ({}));
+    const message =
+      errorData.message ||
+      `Registration failed with status: ${response.status}`;
+    throw new Error(message);
+  }
+
+  return await response.json();
 };
