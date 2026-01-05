@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-export default function AppMenu() {
+export default function AppMenu({ buttons = [] }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -13,6 +14,8 @@ export default function AppMenu() {
     localStorage.removeItem('authToken');
     router.navigate('/login');
   };
+
+  console.log(buttons);
 
   return (
     <>
@@ -28,6 +31,11 @@ export default function AppMenu() {
           <Pressable onPress={handleLogout} style={styles.menuOption}>
             <Text style={styles.text}>Logout</Text>
           </Pressable>
+          {buttons.map((b, index) => (
+            <Pressable key={index} onPress={b[1]} style={styles.menuOption}>
+              <Text style={styles.text}>{b[0]}</Text>
+            </Pressable>
+          ))}
         </View>
       )}
     </>
@@ -55,14 +63,15 @@ const styles = StyleSheet.create({
   },
   menu: {
     position: 'absolute',
-    bottom: 150,
+    bottom: 130,
     left: 50,
     width: 170,
-    height: 70,
+    gap: 10,
+    flexDirection: 'column-reverse',
   },
   menuOption: {
     backgroundColor: '#000',
-    height: '100%',
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
@@ -74,3 +83,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 });
+
+AppMenu.propTypes = {
+  buttons: PropTypes.array,
+};

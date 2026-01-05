@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
-  Dimensions,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import {
   Gesture,
@@ -23,34 +23,33 @@ import Animated, {
 } from 'react-native-reanimated';
 import useImage from 'use-image';
 
-// Importy komponentów
-import Furniture from '../../components/Furniture'; // Zakładam, że tu jest komponent z poprzedniego promptu
+import Furniture from '../../components/Furniture';
 import PalaceTile from '../../components/palaceTile';
 import Vignette from '../../components/Vignette';
 import FurnitureScreen from '../furniture';
 
-// Importy danych
 import { FURNITURE_MAP } from '../../utils/furnitureMap';
-import { getTempPalaceMatrix, setTempPalaceMatrix } from '../../utils/tempData';
+import {
+  getTempPalaceMatrix,
+  getTempPalaceRoute,
+  setTempPalaceMatrix,
+} from '../../utils/tempData';
 import { textures } from '../../utils/textures';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 const TILE_SIZE = 100;
-const WHEEL_SENSITIVITY = 0.005;
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 8;
-const BASE_CENTERING_SPEED = 0.5;
 
 const clampValues = (val, currentScale, mapSize, screenSize) => {
   'worklet';
   const scaledMapSize = mapSize * currentScale;
-  const limit = (scaledMapSize + screenSize) / 2 - 100;
+  const limit = (scaledMapSize + screenSize) / 2;
   return Math.min(Math.max(val, -limit), limit);
 };
 
 export default function PalaceSetupScreen() {
   const router = useRouter();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
 
   const [matrix, setMatrix] = useState(() => getTempPalaceMatrix());
   const [selectedFurniture, setSelectedFurniture] = useState(null);
@@ -63,9 +62,11 @@ export default function PalaceSetupScreen() {
   const savedTranslateY = useSharedValue(0);
   const isFurnitureOpen = useSharedValue(false);
 
-  const zoomTargetRef = useRef(null);
-  const zoomTimeoutRef = useRef(null);
   const layerRef = useRef(null);
+
+  useEffect(() => {
+    setTempPalaceMatrix(matrix);
+  }, [matrix]);
 
   const [furnitureSheet] = useImage(textures.furniture);
   const [imgStone] = useImage(textures.stone1);
@@ -77,7 +78,14 @@ export default function PalaceSetupScreen() {
     [matrix]
   );
   const MAP_HEIGHT = SPLIT_MAP.length;
-  const MAP_WIDTH = SPLIT_MAP[0].length;
+  const MAP_WIDTH = useMemo(() => {
+    let max = 0;
+    SPLIT_MAP.forEach(row => {
+      if (row.length > max) max = row.length;
+    });
+    return max;
+  }, [SPLIT_MAP]);
+
   const MAP_PIXEL_WIDTH = MAP_WIDTH * TILE_SIZE;
   const MAP_PIXEL_HEIGHT = MAP_HEIGHT * TILE_SIZE;
 
@@ -95,11 +103,12 @@ export default function PalaceSetupScreen() {
     if (!selectedFurniture) return;
 
     setMatrix(prevMatrix => {
+      if (!prevMatrix[row] || !prevMatrix[row][col]) return prevMatrix;
+
       const newMatrix = [...prevMatrix];
       const newRow = [...newMatrix[row]];
       const cellString = newRow[col];
       const parts = cellString.split('_');
-      if (parts[0] === '0') return prevMatrix;
 
       const currentFurniture = parts[1];
 
@@ -115,19 +124,29 @@ export default function PalaceSetupScreen() {
     });
   };
 
-  const handleTapLogic = evt => {
+  // Zmiana 3: Logika tapnięcia przyjmuje x i y jako argumenty
+  // Używamy SCREEN_WIDTH z hooka useWindowDimensions
+  const handleTapLogic = (tapX, tapY) => {
     const screenCenterX = SCREEN_WIDTH / 2;
     const screenCenterY = SCREEN_HEIGHT / 2;
     const ROOM_CENTER_X = MAP_PIXEL_WIDTH / 2;
     const ROOM_CENTER_Y = MAP_PIXEL_HEIGHT / 2;
 
+    // Odwracamy transformacje:
+    // 1. Odejmujemy środek ekranu (żeby mieć 0 na środku)
+    // 2. Odejmujemy przesunięcie (translateX)
+    // 3. Dzielimy przez skalę (zoom)
+    // 4. Dodajemy środek pokoju (żeby wrócić do układu współrzędnych mapy 0,0 w lewym górnym rogu)
     const mapX =
-      (evt.x - screenCenterX - translateX.value) / scale.value + ROOM_CENTER_X;
+      (tapX - screenCenterX - translateX.value) / scale.value + ROOM_CENTER_X;
     const mapY =
-      (evt.y - screenCenterY - translateY.value) / scale.value + ROOM_CENTER_Y;
+      (tapY - screenCenterY - translateY.value) / scale.value + ROOM_CENTER_Y;
 
     const col = Math.floor(mapX / TILE_SIZE);
     const row = Math.floor(mapY / TILE_SIZE);
+
+    // Dodatkowe logi do debugowania, jeśli nadal nie działa
+    // console.log({ tapX, screenCenterX, transX: translateX.value, scale: scale.value, mapX, col });
 
     if (row >= 0 && row < MAP_HEIGHT && col >= 0 && col < MAP_WIDTH) {
       toggleFurnitureAt(row, col);
@@ -136,29 +155,31 @@ export default function PalaceSetupScreen() {
 
   const processedTiles = useMemo(() => {
     const tiles = [];
-
     SPLIT_MAP.forEach((row, i) => {
       row.forEach((tile, j) => {
-        const el = tile[0]; // Room ID
+        const el = tile[0];
 
-        const check = (r, c) => SPLIT_MAP[r][c][0] !== el;
-        const checkDiag = (r, c) =>
-          SPLIT_MAP[r][c][0] !== el && SPLIT_MAP[r][c][0] !== '0';
+        const check = (r, c) => {
+          if (r < 0 || r >= MAP_HEIGHT || c < 0 || c >= MAP_WIDTH) return true;
+          if (!SPLIT_MAP[r] || !SPLIT_MAP[r][c]) return true;
+          return SPLIT_MAP[r][c][0] !== el;
+        };
 
-        const top = i === 0 ? el !== '0' : check(i - 1, j);
-        const bottom = i === MAP_HEIGHT - 1 ? el !== '0' : check(i + 1, j);
-        const left = j === 0 ? el !== '0' : check(i, j - 1);
-        const right = j === MAP_WIDTH - 1 ? el !== '0' : check(i, j + 1);
+        const checkDiag = (r, c) => {
+          if (r < 0 || r >= MAP_HEIGHT || c < 0 || c >= MAP_WIDTH) return true;
+          if (!SPLIT_MAP[r] || !SPLIT_MAP[r][c]) return true;
+          return SPLIT_MAP[r][c][0] !== el && SPLIT_MAP[r][c][0] !== '0';
+        };
 
-        const topLeft = i === 0 || j === 0 ? false : checkDiag(i - 1, j - 1);
-        const topRight =
-          i === 0 || j === MAP_WIDTH - 1 ? false : checkDiag(i - 1, j + 1);
-        const bottomLeft =
-          i === MAP_HEIGHT - 1 || j === 0 ? false : checkDiag(i + 1, j - 1);
-        const bottomRight =
-          i === MAP_HEIGHT - 1 || j === MAP_WIDTH - 1
-            ? false
-            : checkDiag(i + 1, j + 1);
+        const top = check(i - 1, j);
+        const bottom = check(i + 1, j);
+        const left = check(i, j - 1);
+        const right = check(i, j + 1);
+
+        const topLeft = checkDiag(i - 1, j - 1);
+        const topRight = checkDiag(i - 1, j + 1);
+        const bottomLeft = checkDiag(i + 1, j - 1);
+        const bottomRight = checkDiag(i + 1, j + 1);
 
         tiles.push(
           <PalaceTile
@@ -202,16 +223,16 @@ export default function PalaceSetupScreen() {
             pixelRatio: 1,
             x: 0,
             y: 0,
-            width: MAP_WIDTH * TILE_SIZE,
-            height: MAP_HEIGHT * TILE_SIZE,
+            width: MAP_PIXEL_WIDTH,
+            height: MAP_PIXEL_HEIGHT,
           });
         } catch (e) {
-          console.log('Cache error skipped during render');
+          console.log('Cache error skipped');
         }
       }
     });
     return () => cancelAnimationFrame(cacheHandle);
-  }, [processedTiles, imageMap, MAP_WIDTH, MAP_HEIGHT]);
+  }, [processedTiles, imageMap, MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT]);
 
   const panGesture = Gesture.Pan()
     .minDistance(3)
@@ -245,6 +266,8 @@ export default function PalaceSetupScreen() {
       const rawScale = savedScale.value * e.scale;
       const newScale = Math.min(Math.max(rawScale, MIN_SCALE), MAX_SCALE);
       scale.value = newScale;
+
+      // Przy zoomowaniu też clampujemy, żeby nie uciekło
       translateX.value = clampValues(
         translateX.value,
         newScale,
@@ -260,14 +283,13 @@ export default function PalaceSetupScreen() {
     })
     .onEnd(() => {
       savedScale.value = scale.value;
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
     });
 
+  // Zmiana 4: Przekazujemy e.x i e.y explicite do runOnJS
   const tapGesture = Gesture.Tap()
     .maxDuration(250)
     .onEnd(e => {
-      runOnJS(handleTapLogic)(e);
+      runOnJS(handleTapLogic)(e.x, e.y);
     });
 
   const composedGestures = Gesture.Race(
@@ -294,16 +316,17 @@ export default function PalaceSetupScreen() {
     >
       <GestureDetector gesture={composedGestures}>
         <Animated.View style={style.container}>
+          {/* Zmiana 5: Upewniamy się, że wrapper ma rozmiar całej mapy */}
           <Animated.View
             style={[
               style.rectangle,
-              { width: MAP_WIDTH * TILE_SIZE, height: MAP_HEIGHT * TILE_SIZE },
+              { width: MAP_PIXEL_WIDTH, height: MAP_PIXEL_HEIGHT },
               animatedStyle,
             ]}
           >
             <Stage
-              width={MAP_WIDTH * TILE_SIZE}
-              height={MAP_HEIGHT * TILE_SIZE}
+              width={MAP_PIXEL_WIDTH}
+              height={MAP_PIXEL_HEIGHT}
               options={{ pixelRatio: 1 }}
             >
               <Layer ref={layerRef} listening={false}>
@@ -329,9 +352,12 @@ export default function PalaceSetupScreen() {
                   isSelected && style.furnitureItemActive,
                 ]}
               >
-                {/* Renderujemy mebel używając Twojego komponentu Furniture */}
+                {/* Zmiana: Optymalizacja Sidebaru - jeśli renderowanie wielu Stage 
+                   powoduje lagi, można tu użyć statycznych obrazków PNG, 
+                   ale zostawiam jak jest zgodnie z Twoim kodem, bo prosiłeś tylko o fixa klikania.
+                */}
                 {furnitureSheet && (
-                  <View style={{ width: 40, height: 40 }}>
+                  <View style={{ width: 40, height: 40, overflow: 'hidden' }}>
                     <Stage width={40} height={40}>
                       <Layer>
                         <Furniture
@@ -343,7 +369,6 @@ export default function PalaceSetupScreen() {
                     </Stage>
                   </View>
                 )}
-                {/* Opcjonalnie nazwa */}
                 <Text style={{ color: 'white', fontSize: 10 }}>{key}</Text>
               </TouchableOpacity>
             );
@@ -354,7 +379,8 @@ export default function PalaceSetupScreen() {
       <Pressable
         onPress={() => {
           setTempPalaceMatrix(matrix);
-          router.navigate('/backrooms');
+          const route = getTempPalaceRoute();
+          router.navigate(route ?? '/backrooms');
         }}
         style={style.reviewButton}
       >
@@ -371,18 +397,16 @@ export default function PalaceSetupScreen() {
 const style = StyleSheet.create({
   body: {
     flex: 1,
+    backgroundColor: '#333',
   },
   container: {
     flex: 1,
-    backgroundColor: '#333',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    width: '100%',
-    height: '100%',
   },
   rectangle: {
-    backgroundColor: '#4a90e2',
+    // backgroundColor: '#4a90e2', // Opcjonalnie wyłącz kolor tła, żeby widzieć tylko mapę
   },
   reviewButton: {
     position: 'absolute',
@@ -399,13 +423,11 @@ const style = StyleSheet.create({
     zIndex: 200,
   },
   reviewButtonText: { fontSize: 24, color: '#FFF' },
-
-  // --- STYLING SIDEBARU (Wzorowane na poprzednim ekranie) ---
   furnitureListBlock: {
     position: 'absolute',
     left: 50,
     top: 50,
-    width: 100, // Węższy niż pokoje, bo tylko ikony
+    width: 100,
     height: '80%',
     backgroundColor: '#000',
     borderWidth: 2,
@@ -413,7 +435,7 @@ const style = StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 20,
     alignItems: 'center',
-    zIndex: 100, // Nad mapą
+    zIndex: 100,
   },
   headerListTitle: {
     color: '#FFFFFF',
@@ -433,7 +455,7 @@ const style = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#222', // Tło dla nieaktywnego
+    backgroundColor: '#222',
   },
   furnitureItemActive: {
     borderWidth: 2,
