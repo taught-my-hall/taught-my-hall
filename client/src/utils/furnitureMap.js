@@ -9,7 +9,6 @@ export const FURNITURE_MAP = {
   doubleBedGreen: { x: 48, y: 131, w: 48, h: 62 },
   doubleBedBlue: { x: 0, y: 195, w: 48, h: 62 },
   doubleBedPink: { x: 48, y: 195, w: 48, h: 62 },
-  doubleBedPink: { x: 48, y: 195, w: 48, h: 62 },
   doubleBedLightBlue: { x: 0, y: 259, w: 48, h: 62 },
   doubleBedYellow: { x: 48, y: 259, w: 48, h: 62 },
   childBedBlue: { x: 0, y: 319, w: 48, h: 34 },
@@ -92,7 +91,7 @@ export const FURNITURE_MAP = {
   chestLightRight: { x: 452, y: 569, w: 12, h: 39 },
   chestLightLeft: { x: 464, y: 569, w: 12, h: 39 },
   chestLightFront: { x: 352, y: 601, w: 12, h: 39 },
-  chestLightFront: { x: 384, y: 601, w: 12, h: 39 },
+  chestLightBack: { x: 384, y: 601, w: 12, h: 39 },
 
   tableBrown: { x: 256, y: 9, w: 48, h: 39 },
   tableLight: { x: 208, y: 0, w: 48, h: 48 },
