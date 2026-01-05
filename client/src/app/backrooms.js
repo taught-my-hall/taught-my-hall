@@ -16,6 +16,7 @@ import { apiClient } from '../../services/apiClient';
 import BackroomSegment from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
 import Vignette from '../components/Vignette';
+import { setPalacesData } from '../utils/tempData';
 import { textures } from '../utils/textures';
 
 const { width, height } = Dimensions.get('window');
@@ -38,6 +39,7 @@ export default function BackroomScreen() {
       });
       if (data) {
         setPalaces(data);
+        setPalacesData(data);
       }
     } catch (err) {
       console.error('Failed to load palaces:', err);
@@ -116,7 +118,7 @@ export default function BackroomScreen() {
             const isFirstRoom = p === 0;
             const isLastRoom = p === palaces.length - 1;
             const currentPalace = palaces[p];
-
+            console.log(currentPalace.name, currentPalace.id, p, i);
             return (
               <BackroomSegment
                 key={`palace-${currentPalace.id || p}`}

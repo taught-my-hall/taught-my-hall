@@ -1,5 +1,5 @@
-import { usePathname, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
   Dimensions,
@@ -18,10 +18,12 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import useImage from 'use-image';
+import { apiClient } from '../../../../services/apiClient';
 import AppMenu from '../../../components/AppMenu';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
 import {
+  getPalacesData,
   setTempPalaceMatrix,
   setTempPalaceRoute,
 } from '../../../utils/tempData';
@@ -29,87 +31,8 @@ import { textures } from '../../../utils/textures';
 import FurnitureScreen from '../../furniture';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const PALACE_MAP_RAW = [
-  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
-  [
-    '1__',
-    '1__',
-    '1__',
-    '1__',
-    '1__',
-    '0__',
-    '2_bedGreen_',
-    '2__',
-    '2__',
-    '2__',
-    '2__',
-  ],
-  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
-  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
-  ['1__', '1__', '1__', '1__', '1__', '0__', '2__', '2__', '2__', '2__', '2__'],
-  ['0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__', '0__'],
-  [
-    '3__',
-    '3__0',
-    '3__',
-    '3__',
-    '3__',
-    '0__',
-    '4__',
-    '4__',
-    '4__0',
-    '4__',
-    '4__',
-  ],
-  [
-    '3__',
-    '3_chairWood_',
-    '3__',
-    '3__',
-    '3__',
-    '0__',
-    '4__',
-    '4__',
-    '4__',
-    '4__',
-    '4__',
-  ],
-  [
-    '3__',
-    '3__',
-    '3__',
-    '3__',
-    '3__',
-    '0__',
-    '4_chairWood_',
-    '4__',
-    '4__',
-    '4__',
-    '4__',
-  ],
-  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
-  [
-    '3__',
-    '3__',
-    '3_bedGreen_',
-    '3__',
-    '3__',
-    '0__',
-    '4__',
-    '4_bedGreen_',
-    '4__',
-    '4__',
-    '4__',
-  ],
-  ['3__', '3__', '3__', '3__', '3__', '0__', '4__', '4__', '4__', '4__', '4__'],
-];
 
-const SPLIT_MAP = PALACE_MAP_RAW.map(row => row.map(cell => cell.split('_')));
-const MAP_HEIGHT = SPLIT_MAP.length;
-const MAP_WIDTH = SPLIT_MAP[0].length;
 const TILE_SIZE = 100;
-const MAP_PIXEL_WIDTH = MAP_WIDTH * TILE_SIZE;
-const MAP_PIXEL_HEIGHT = MAP_HEIGHT * TILE_SIZE;
 
 const WHEEL_SENSITIVITY = 0.005;
 const MIN_SCALE = 0.5;
@@ -125,6 +48,16 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 
 function PalaceScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const [currentPalace, setCurrentPalace] = useState(() => {
+    const allPalaces = getPalacesData();
+
+    if (Array.isArray(allPalaces)) {
+      return allPalaces.find(p => String(p.id) === String(id)) || null;
+    }
+
+    return null;
+  });
   const pathname = usePathname();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
@@ -147,34 +80,57 @@ function PalaceScreen() {
       stone1: imgStone,
       planks1: imgPlanks,
       brick1: imgBrick,
-      furnitureSheet: furnitureSheet,
+      furnitureSheet,
     }),
     [imgStone, imgPlanks, imgBrick, furnitureSheet]
   );
 
-  const processedTiles = useMemo(() => {
-    const tiles = [];
+  const mapData = useMemo(() => {
+    if (!currentPalace || !currentPalace.palace_matrix) {
+      return { grid: [], width: 0, height: 0, pixelWidth: 0, pixelHeight: 0 };
+    }
 
-    SPLIT_MAP.forEach((row, i) => {
+    const rawMap = currentPalace.palace_matrix;
+
+    const grid = rawMap.map(row => row.map(cell => cell.split('_')));
+    const height = grid.length;
+    const width = grid[0]?.length || 0;
+
+    return {
+      grid,
+      width,
+      height,
+      pixelWidth: width * TILE_SIZE,
+      pixelHeight: height * TILE_SIZE,
+    };
+  }, [currentPalace]);
+
+  const processedTiles = useMemo(() => {
+    if (!mapData.grid.length) return [];
+
+    const tiles = [];
+    const { grid } = mapData;
+
+    grid.forEach((row, i) => {
       row.forEach((tile, j) => {
         const el = tile[0];
 
-        const check = (r, c) => SPLIT_MAP[r][c][0] !== el;
+        const check = (r, c) => grid[r][c][0] !== el;
         const checkDiag = (r, c) =>
-          SPLIT_MAP[r][c][0] !== el && SPLIT_MAP[r][c][0] !== '0';
+          grid[r][c][0] !== el && grid[r][c][0] !== '0';
 
         const top = i === 0 ? el !== '0' : check(i - 1, j);
-        const bottom = i === MAP_HEIGHT - 1 ? el !== '0' : check(i + 1, j);
+        const bottom = i === mapData.height - 1 ? el !== '0' : check(i + 1, j);
         const left = j === 0 ? el !== '0' : check(i, j - 1);
-        const right = j === MAP_WIDTH - 1 ? el !== '0' : check(i, j + 1);
+        const right = j === mapData.width - 1 ? el !== '0' : check(i, j + 1);
 
         const topLeft = i === 0 || j === 0 ? false : checkDiag(i - 1, j - 1);
         const topRight =
-          i === 0 || j === MAP_WIDTH - 1 ? false : checkDiag(i - 1, j + 1);
+          i === 0 || j === mapData.width - 1 ? false : checkDiag(i - 1, j + 1);
         const bottomLeft =
-          i === MAP_HEIGHT - 1 || j === 0 ? false : checkDiag(i + 1, j - 1);
+          i === mapData.height - 1 || j === 0 ? false : checkDiag(i + 1, j - 1);
         const bottomRight =
-          i === MAP_HEIGHT - 1 || j === MAP_WIDTH - 1
+          i === mapData.height - 1 || j === mapData.width - 1
             ? false
             : checkDiag(i + 1, j + 1);
 
@@ -201,7 +157,7 @@ function PalaceScreen() {
       });
     });
     return tiles;
-  }, [imageMap]);
+  }, [mapData, imageMap]);
 
   useEffect(() => {
     const areImagesReady =
@@ -210,7 +166,7 @@ function PalaceScreen() {
       imageMap.brick1 &&
       imageMap.furnitureSheet;
 
-    if (!areImagesReady) return;
+    if (!areImagesReady) return undefined;
 
     const cacheHandle = requestAnimationFrame(() => {
       if (layerRef.current) {
@@ -219,13 +175,13 @@ function PalaceScreen() {
           pixelRatio: 1,
           x: 0,
           y: 0,
-          width: MAP_WIDTH * TILE_SIZE,
-          height: MAP_HEIGHT * TILE_SIZE,
+          width: mapData.width * TILE_SIZE,
+          height: mapData.height * TILE_SIZE,
         });
       }
     });
     return () => cancelAnimationFrame(cacheHandle);
-  }, [processedTiles, imageMap]);
+  }, [processedTiles, imageMap, mapData]);
 
   const panGesture = useMemo(
     () =>
@@ -242,13 +198,13 @@ function PalaceScreen() {
           translateX.value = clampValues(
             rawX,
             scale.value,
-            MAP_PIXEL_WIDTH,
+            mapData.pixelWidth,
             SCREEN_WIDTH
           );
           translateY.value = clampValues(
             rawY,
             scale.value,
-            MAP_PIXEL_HEIGHT,
+            mapData.pixelHeight,
             SCREEN_HEIGHT
           );
         })
@@ -263,6 +219,7 @@ function PalaceScreen() {
       savedTranslateY,
       isFurnitureOpen,
       scale,
+      mapData,
     ]
   );
 
@@ -278,13 +235,13 @@ function PalaceScreen() {
           translateX.value = clampValues(
             translateX.value,
             newScale,
-            MAP_PIXEL_WIDTH,
+            mapData.pixelWidth,
             SCREEN_WIDTH
           );
           translateY.value = clampValues(
             translateY.value,
             newScale,
-            MAP_PIXEL_HEIGHT,
+            mapData.pixelHeight,
             SCREEN_HEIGHT
           );
         })
@@ -300,6 +257,7 @@ function PalaceScreen() {
       translateY,
       savedTranslateX,
       savedTranslateY,
+      mapData,
     ]
   );
 
@@ -321,8 +279,8 @@ function PalaceScreen() {
 
       const screenCenterX = SCREEN_WIDTH / 2;
       const screenCenterY = SCREEN_HEIGHT / 2;
-      const ROOM_CENTER_X = MAP_PIXEL_WIDTH / 2;
-      const ROOM_CENTER_Y = MAP_PIXEL_HEIGHT / 2;
+      const ROOM_CENTER_X = mapData.pixelWidth / 2;
+      const ROOM_CENTER_Y = mapData.pixelHeight / 2;
 
       const mouseRoomX =
         (e.nativeEvent.clientX - screenCenterX - oldTranslateX) / oldScale +
@@ -336,9 +294,9 @@ function PalaceScreen() {
         const row = Math.floor(mouseRoomY / TILE_SIZE);
 
         const isValidGrid =
-          col >= 0 && col < MAP_WIDTH && row >= 0 && row < MAP_HEIGHT;
+          col >= 0 && col < mapData.width && row >= 0 && row < mapData.height;
 
-        const hasFurniture = isValidGrid && SPLIT_MAP[row][col][1] !== '';
+        const hasFurniture = isValidGrid && mapData.grid[row][col][1] !== '';
 
         if (isValidGrid) {
           zoomTargetRef.current = {
@@ -411,13 +369,13 @@ function PalaceScreen() {
       translateX.value = clampValues(
         newTranslateX,
         newScale,
-        MAP_PIXEL_WIDTH,
+        mapData.pixelWidth,
         SCREEN_WIDTH
       );
       translateY.value = clampValues(
         newTranslateY,
         newScale,
-        MAP_PIXEL_HEIGHT,
+        mapData.pixelHeight,
         SCREEN_HEIGHT
       );
 
@@ -436,6 +394,7 @@ function PalaceScreen() {
       savedTranslateX,
       savedTranslateY,
       isFurnitureOpen,
+      mapData,
     ]
   );
 
@@ -449,6 +408,28 @@ function PalaceScreen() {
     };
   });
 
+  const fetchPalace = useCallback(async () => {
+    try {
+      const apiData = await apiClient(`/api/palaces/${id}`, { method: 'GET' });
+
+      if (apiData) {
+        setCurrentPalace(apiData);
+      }
+    } catch (err) {
+      console.error('Failed to load palace:', err);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (!currentPalace) {
+      fetchPalace();
+    }
+  }, [currentPalace, fetchPalace]);
+
+  if (!currentPalace) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView
       style={style.body}
@@ -456,10 +437,16 @@ function PalaceScreen() {
     >
       <GestureDetector gesture={composedGestures}>
         <Animated.View style={style.container}>
-          <Animated.View style={[style.rectangle, animatedStyle]}>
+          <Animated.View
+            style={[
+              style.rectangle,
+              { width: mapData.pixelWidth, height: mapData.pixelHeight },
+              animatedStyle,
+            ]}
+          >
             <Stage
-              width={MAP_WIDTH * TILE_SIZE}
-              height={MAP_HEIGHT * TILE_SIZE}
+              width={mapData.width * TILE_SIZE}
+              height={mapData.height * TILE_SIZE}
               options={{ pixelRatio: 1 }}
             >
               <Layer ref={layerRef} listening={false}>
@@ -480,7 +467,7 @@ function PalaceScreen() {
           [
             'Edit',
             () => {
-              setTempPalaceMatrix(PALACE_MAP_RAW);
+              setTempPalaceMatrix(currentPalace.palace_matrix);
               setTempPalaceRoute(pathname);
               router.navigate('/palace/create');
             },
@@ -514,8 +501,6 @@ const style = StyleSheet.create({
     height: '100%',
   },
   rectangle: {
-    height: MAP_HEIGHT * TILE_SIZE,
-    width: MAP_WIDTH * TILE_SIZE,
     backgroundColor: '#4a90e2',
   },
   reviewButton: {

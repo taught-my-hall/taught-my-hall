@@ -7,50 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { apiClient } from '../../services/apiClient';
 import { iconsFishcards, iconsGui } from '../utils/textures';
-
-const fakeFetch = async () => {
-  return new Promise(resolve => {
-    setTimeout(
-      () =>
-        resolve({
-          questions: [
-            { id: 1, front: 'What is the capital of France?', back: 'Paris' },
-            { id: 2, front: 'What is 2 + 2?', back: '4' },
-            { id: 3, front: 'What is the largest planet?', back: 'Jupiter' },
-            {
-              id: 4,
-              front: 'Who wrote Romeo and Juliet?',
-              back: 'William Shakespeare',
-            },
-            {
-              id: 5,
-              front: 'What is the chemical symbol for gold?',
-              back: 'Au',
-            },
-            { id: 6, front: 'What year did the Titanic sink?', back: '1912' },
-            {
-              id: 7,
-              front: 'What is the smallest country?',
-              back: 'Vatican City',
-            },
-            { id: 8, front: 'How many continents are there?', back: '7' },
-            {
-              id: 9,
-              front: 'What is the speed of light?',
-              back: '299,792,458 m/s',
-            },
-            {
-              id: 10,
-              front: 'Most spoken language?',
-              back: 'Mandarin Chinese',
-            },
-          ],
-        }),
-      1500
-    );
-  });
-};
 
 const iconList = Object.keys(iconsFishcards);
 
@@ -58,23 +16,36 @@ export default function FurnitureScreen() {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-
   const [areAllVisible, setAreAllVisible] = useState(false);
 
-  const refetchQuestions = useCallback(() => {
+  const refetchQuestions = useCallback(async () => {
     setIsLoading(true);
     setError('');
 
-    fakeFetch()
-      .then(res => {
-        setQuestions(res.questions.map(q => ({ ...q, hidden: true })));
-      })
-      .catch(_err => {
-        setError('Something went wrong, please try again');
-      })
-      .finally(() => {
-        setIsLoading(false);
+    try {
+      const data = await apiClient(`/api/furniture/2/flashcards/`, {
+        method: 'GET',
       });
+      if (data) {
+        const rawList = Array.isArray(data) ? data : data.questions || [];
+
+        const formattedQuestions = rawList.map(q => ({
+          ...q,
+          front: q.front || q.question || '?',
+          back: q.back || q.answer || '?',
+          hidden: true,
+        }));
+
+        setQuestions(formattedQuestions);
+      } else {
+        setQuestions([]);
+      }
+    } catch (err) {
+      console.error('Failed to load flashcards:', err);
+      setError('Something went wrong, please try again');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -106,11 +77,9 @@ export default function FurnitureScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.main}>
-        {/* HEADER: Tytuł + Oko sterujące */}
         <View style={styles.header}>
           <Text style={styles.heading}>Flashcards Framing</Text>
           <Pressable onPress={handleGlobalToggle} style={styles.eyeButton}>
-            {/* Ikona oka zmienia się w zależności od stanu globalnego */}
             <Image
               source={{
                 uri: areAllVisible ? iconsGui['eye'] : iconsGui['eye-slash'],
@@ -121,7 +90,6 @@ export default function FurnitureScreen() {
           </Pressable>
         </View>
 
-        {/* LOADING */}
         {isLoading && (
           <View style={styles.centerBox}>
             <ActivityIndicator size="large" color="#fff" />
@@ -129,7 +97,6 @@ export default function FurnitureScreen() {
           </View>
         )}
 
-        {/* ERROR */}
         {!!error && (
           <View style={styles.centerBox}>
             <Text style={styles.errorText}>{error}</Text>
@@ -139,7 +106,6 @@ export default function FurnitureScreen() {
           </View>
         )}
 
-        {/* GRID Z KAFELKAMI */}
         {!isLoading && !error && questions.length > 0 && (
           <View style={styles.gridContainer}>
             {questions.map((q, index) => {
@@ -170,7 +136,6 @@ export default function FurnitureScreen() {
                       <Text style={styles.label}>Answer:</Text>
                       <Text style={styles.answerText}>{q.back}</Text>
 
-                      {/* Opcjonalnie: ikona jako znak wodny w tle */}
                       <Image
                         source={iconSource}
                         style={styles.watermark}
