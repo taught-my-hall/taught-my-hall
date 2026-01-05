@@ -1,7 +1,6 @@
 let tempPalaceMatrix = null;
 let palacesData = null;
 
-
 export const setTempPalaceMatrix = matrix => {
   tempPalaceMatrix = matrix;
   localStorage.setItem('tempPalaceMatrix', JSON.stringify(matrix));

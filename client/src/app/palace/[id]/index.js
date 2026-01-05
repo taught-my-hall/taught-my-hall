@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter, usePathname } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
@@ -80,7 +80,7 @@ function PalaceScreen() {
       stone1: imgStone,
       planks1: imgPlanks,
       brick1: imgBrick,
-      furnitureSheet: furnitureSheet,
+      furnitureSheet,
     }),
     [imgStone, imgPlanks, imgBrick, furnitureSheet]
   );
@@ -109,7 +109,7 @@ function PalaceScreen() {
     if (!mapData.grid.length) return [];
 
     const tiles = [];
-    const grid = mapData.grid;
+    const { grid } = mapData;
 
     grid.forEach((row, i) => {
       row.forEach((tile, j) => {
@@ -166,7 +166,7 @@ function PalaceScreen() {
       imageMap.brick1 &&
       imageMap.furnitureSheet;
 
-    if (!areImagesReady) return;
+    if (!areImagesReady) return undefined;
 
     const cacheHandle = requestAnimationFrame(() => {
       if (layerRef.current) {
@@ -257,7 +257,7 @@ function PalaceScreen() {
       translateY,
       savedTranslateX,
       savedTranslateY,
-      mapData, // Added mapData to dependencies (accessed via clampValues)
+      mapData,
     ]
   );
 
@@ -467,7 +467,7 @@ function PalaceScreen() {
           [
             'Edit',
             () => {
-              setTempPalaceMatrix(PALACE_MAP_RAW);
+              setTempPalaceMatrix(currentPalace.palace_matrix);
               setTempPalaceRoute(pathname);
               router.navigate('/palace/create');
             },
