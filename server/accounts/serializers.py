@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     name = serializers.CharField(max_length=30)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -37,7 +37,7 @@ class LoginSerializer(serializers.Serializer):
 
         if user is None:
             raise serializers.ValidationError(
-                "Invalid emial or password.",
+                "Invalid email or password.",
                 code="authentication_failed"
             )
 
