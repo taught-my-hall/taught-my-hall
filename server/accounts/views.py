@@ -47,15 +47,3 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK
         )
-
-
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request):
-        return Response(
-            {
-                "message": "Logout successful"
-            },
-            status=status.HTTP_200_OK
-        )
