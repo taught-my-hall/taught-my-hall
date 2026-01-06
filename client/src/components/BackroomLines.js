@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import {
   Platform,
@@ -34,14 +33,14 @@ const CEIL_COLOR = '#2a2a2a';
 const DOOR_COLOR = '#1a1a1a';
 
 export default function BackroomLines({
-                                        i,
-                                        p,
-                                        total,
-                                        title,
-                                        onPress,
-                                        svgWidth,
-                                        images, // Received from BackroomScreen
-                                      }) {
+  i,
+  p,
+  total,
+  title,
+  onPress,
+  svgWidth,
+  images, // Received from BackroomScreen
+}) {
   const { width, height } = useWindowDimensions();
 
   const isFirst = p === 0;
@@ -55,7 +54,7 @@ export default function BackroomLines({
 
   const canvasWidth = svgWidth || width;
 
-  const handlePress = (e) => {
+  const handlePress = e => {
     if (Platform.OS === 'web' && e?.target?.blur) {
       e.target.blur();
     }
@@ -65,7 +64,7 @@ export default function BackroomLines({
   };
 
   // Helper: Get strict URL string from image object or string
-  const getImgHref = (img) => {
+  const getImgHref = img => {
     if (!img) return null;
     // If it's a DOM node (from use-image on web), get .src
     if (typeof img === 'object' && img.src) return img.src;
@@ -91,379 +90,379 @@ export default function BackroomLines({
   const doorFill = doorSrc ? `url(#${doorId})` : DOOR_COLOR;
 
   return (
-      <View
-          style={[styles.container, { width, height }]}
-          pointerEvents="box-none"
+    <View
+      style={[styles.container, { width, height }]}
+      pointerEvents="box-none"
+    >
+      <Svg
+        height={height}
+        width={canvasWidth}
+        pointerEvents="none"
+        style={styles.svg}
       >
-        <Svg
-            height={height}
-            width={canvasWidth}
-            pointerEvents="none"
-            style={styles.svg}
-        >
-          <Defs>
-            {/* Floor Pattern */}
-            {floorSrc && (
-                <Pattern
-                    id={floorId}
-                    patternUnits="userSpaceOnUse"
-                    width={256}
-                    height={256}
-                >
-                  <Image
-                      href={floorSrc}
-                      x="0"
-                      y="0"
-                      width="256"
-                      height="256"
-                      preserveAspectRatio="xMidYMid slice"
-                  />
-                </Pattern>
-            )}
-            {/* Wall Pattern */}
-            {wallSrc && (
-                <Pattern
-                    id={wallId}
-                    patternUnits="userSpaceOnUse"
-                    width={256}
-                    height={256}
-                >
-                  <Image
-                      href={wallSrc}
-                      x="0"
-                      y="0"
-                      width="256"
-                      height="256"
-                      preserveAspectRatio="xMidYMid slice"
-                  />
-                </Pattern>
-            )}
-            {/* Ceiling Pattern */}
-            {ceilSrc && (
-                <Pattern
-                    id={ceilId}
-                    patternUnits="userSpaceOnUse"
-                    width={256}
-                    height={256}
-                >
-                  <Image
-                      href={ceilSrc}
-                      x="0"
-                      y="0"
-                      width="256"
-                      height="256"
-                      preserveAspectRatio="xMidYMid slice"
-                  />
-                </Pattern>
-            )}
-            {/* Door Pattern */}
-            {doorSrc && (
-                <Pattern
-                    id={doorId}
-                    patternUnits="userSpaceOnUse"
-                    width={doorW}
-                    height={doorH}
-                >
-                  <Image
-                      href={doorSrc}
-                      x="0"
-                      y="0"
-                      width={doorW}
-                      height={doorH}
-                      preserveAspectRatio="none"
-                  />
-                </Pattern>
-            )}
-          </Defs>
+        <Defs>
+          {/* Floor Pattern */}
+          {floorSrc && (
+            <Pattern
+              id={floorId}
+              patternUnits="userSpaceOnUse"
+              width={256}
+              height={256}
+            >
+              <Image
+                href={floorSrc}
+                x="0"
+                y="0"
+                width="256"
+                height="256"
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </Pattern>
+          )}
+          {/* Wall Pattern */}
+          {wallSrc && (
+            <Pattern
+              id={wallId}
+              patternUnits="userSpaceOnUse"
+              width={256}
+              height={256}
+            >
+              <Image
+                href={wallSrc}
+                x="0"
+                y="0"
+                width="256"
+                height="256"
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </Pattern>
+          )}
+          {/* Ceiling Pattern */}
+          {ceilSrc && (
+            <Pattern
+              id={ceilId}
+              patternUnits="userSpaceOnUse"
+              width={256}
+              height={256}
+            >
+              <Image
+                href={ceilSrc}
+                x="0"
+                y="0"
+                width="256"
+                height="256"
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </Pattern>
+          )}
+          {/* Door Pattern */}
+          {doorSrc && (
+            <Pattern
+              id={doorId}
+              patternUnits="userSpaceOnUse"
+              width={doorW}
+              height={doorH}
+            >
+              <Image
+                href={doorSrc}
+                x="0"
+                y="0"
+                width={doorW}
+                height={doorH}
+                preserveAspectRatio="none"
+              />
+            </Pattern>
+          )}
+        </Defs>
 
-          {isFirst ? (
-              <>
-                {/* Ceiling */}
-                <Polygon
-                    points={`
+        {isFirst ? (
+          <>
+            {/* Ceiling */}
+            <Polygon
+              points={`
                 ${width * i},0 
                 ${width * (i + 0.51)},0 
                 ${width * (i + 0.51)},${height * CEIL_HEIGHT_RATIO} 
                 ${width * (i + LEFT_CORNER)},${height * CEIL_HEIGHT_RATIO}
               `}
-                    fill={ceilFill}
-                />
-                {/* Left Wall */}
-                <Polygon
-                    points={`
+              fill={ceilFill}
+            />
+            {/* Left Wall */}
+            <Polygon
+              points={`
                 ${width * i},0 
                 ${width * (i + LEFT_CORNER)},${height * CEIL_HEIGHT_RATIO} 
                 ${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
                 ${width * i},${height}
               `}
-                    fill={wallFill}
-                />
-                {/* Floor */}
-                <Polygon
-                    points={`${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
+              fill={wallFill}
+            />
+            {/* Floor */}
+            <Polygon
+              points={`${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height} 
               ${width * i},${height}`}
-                    fill={floorFill}
-                />
-                {/* Wireframes */}
-                <Line
-                    x1={width * (i + LEFT_CORNER)}
-                    y1={height * FLOOR_HEIGHT_RATIO}
-                    x2={width * (i + 0.5)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * i}
-                    y1={height}
-                    x2={width * (i + LEFT_CORNER)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + LEFT_CORNER)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + LEFT_CORNER)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * i}
-                    y1={0}
-                    x2={width * (i + LEFT_CORNER)}
-                    y2={height * CEIL_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + LEFT_CORNER)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + 0.5)}
-                    y2={height * CEIL_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-              </>
-          ) : (
-              <>
-                {/* Middle Segment */}
-                {/* Ceiling */}
-                <Polygon
-                    points={`
+              fill={floorFill}
+            />
+            {/* Wireframes */}
+            <Line
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + 0.5)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * i}
+              y1={height}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * i}
+              y1={0}
+              x2={width * (i + LEFT_CORNER)}
+              y2={height * CEIL_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + LEFT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + 0.5)}
+              y2={height * CEIL_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+          </>
+        ) : (
+          <>
+            {/* Middle Segment */}
+            {/* Ceiling */}
+            <Polygon
+              points={`
                 ${width * i},0 
                 ${width * (i + 0.51)},0 
                 ${width * (i + 0.51)},${height * CEIL_HEIGHT_RATIO} 
                 ${width * i},${height * CEIL_HEIGHT_RATIO}
               `}
-                    fill={ceilFill}
-                />
-                {/* Floor */}
-                <Polygon
-                    points={`${width * i},${height * FLOOR_HEIGHT_RATIO} 
+              fill={ceilFill}
+            />
+            {/* Floor */}
+            <Polygon
+              points={`${width * i},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height} 
               ${width * i},${height}`}
-                    fill={floorFill}
-                />
-                {/* Wireframes */}
-                <Line
-                    x1={width * i}
-                    y1={height * FLOOR_HEIGHT_RATIO}
-                    x2={width * (i + 0.5)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * i}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + 0.5)}
-                    y2={height * CEIL_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-              </>
-          )}
+              fill={floorFill}
+            />
+            {/* Wireframes */}
+            <Line
+              x1={width * i}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + 0.5)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * i}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + 0.5)}
+              y2={height * CEIL_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+          </>
+        )}
 
-          {isLast ? (
-              <>
-                {/* Ceiling */}
-                <Polygon
-                    points={`
+        {isLast ? (
+          <>
+            {/* Ceiling */}
+            <Polygon
+              points={`
                 ${width * (i + 0.5)},0 
                 ${width * (i + 1)},0 
                 ${width * (i + RIGHT_CORNER)},${height * CEIL_HEIGHT_RATIO} 
                 ${width * (i + 0.5)},${height * CEIL_HEIGHT_RATIO}
               `}
-                    fill={ceilFill}
-                />
-                {/* Right Wall */}
-                <Polygon
-                    points={`
+              fill={ceilFill}
+            />
+            {/* Right Wall */}
+            <Polygon
+              points={`
                 ${width * (i + 1)},0 
                 ${width * (i + 1)},${height} 
                 ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
                 ${width * (i + RIGHT_CORNER)},${height * CEIL_HEIGHT_RATIO}
               `}
-                    fill={wallFill}
-                />
-                {/* Floor */}
-                <Polygon
-                    points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+              fill={wallFill}
+            />
+            {/* Floor */}
+            <Polygon
+              points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 1)},${height} 
               ${width * (i + 0.5)},${height}`}
-                    fill={floorFill}
-                />
-                {/* Wireframes */}
-                <Line
-                    x1={width * (i + 0.5)}
-                    y1={height * FLOOR_HEIGHT_RATIO}
-                    x2={width * (i + RIGHT_CORNER)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + RIGHT_CORNER)}
-                    y1={height * FLOOR_HEIGHT_RATIO}
-                    x2={width * (i + 1)}
-                    y2={height}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + RIGHT_CORNER)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + RIGHT_CORNER)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + 0.5)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + RIGHT_CORNER)}
-                    y2={height * CEIL_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + RIGHT_CORNER)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + 1)}
-                    y2={0}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-              </>
-          ) : (
-              <>
-                {/* Middle Segment Right Half */}
-                {/* Ceiling */}
-                <Polygon
-                    points={`
+              fill={floorFill}
+            />
+            {/* Wireframes */}
+            <Line
+              x1={width * (i + 0.5)}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + 1)}
+              y2={height}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * FLOOR_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + 0.5)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + RIGHT_CORNER)}
+              y2={height * CEIL_HEIGHT_RATIO}
+              stroke="white"
+              strokeWidth={2}
+            />
+            <Line
+              x1={width * (i + RIGHT_CORNER)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + 1)}
+              y2={0}
+              stroke="white"
+              strokeWidth={2}
+            />
+          </>
+        ) : (
+          <>
+            {/* Middle Segment Right Half */}
+            {/* Ceiling */}
+            <Polygon
+              points={`
                 ${width * (i + 0.5)},0 
                 ${width * (i + 1)},0 
                 ${width * (i + 1)},${height * CEIL_HEIGHT_RATIO} 
                 ${width * (i + 0.5)},${height * CEIL_HEIGHT_RATIO}
               `}
-                    fill={ceilFill}
-                />
-                {/* Floor */}
-                <Polygon
-                    points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+              fill={ceilFill}
+            />
+            {/* Floor */}
+            <Polygon
+              points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 1)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 1)},${height} 
               ${width * (i + 0.5)},${height}`}
-                    fill={floorFill}
-                />
-                {/* Wireframes */}
-                <Line
-                    x1={width * (i + 0.5)}
-                    y1={height * FLOOR_HEIGHT_RATIO}
-                    x2={width * (i + 1)}
-                    y2={height * FLOOR_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-                <Line
-                    x1={width * (i + 0.5)}
-                    y1={height * CEIL_HEIGHT_RATIO}
-                    x2={width * (i + 1)}
-                    y2={height * CEIL_HEIGHT_RATIO}
-                    stroke="white"
-                    strokeWidth={2}
-                />
-              </>
-          )}
-
-          {/* --- Door --- */}
-          <Rect
-              x={doorX}
-              y={doorY}
-              width={doorW}
-              height={doorH}
-              fill={doorFill}
-          />
-          {/* Door Wireframe */}
-          <Line
-              x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
-              y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
-              x2={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+              fill={floorFill}
+            />
+            {/* Wireframes */}
+            <Line
+              x1={width * (i + 0.5)}
+              y1={height * FLOOR_HEIGHT_RATIO}
+              x2={width * (i + 1)}
               y2={height * FLOOR_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
-          />
-          <Line
-              x1={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
-              y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
-              x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
-              y2={height * FLOOR_HEIGHT_RATIO}
+            />
+            <Line
+              x1={width * (i + 0.5)}
+              y1={height * CEIL_HEIGHT_RATIO}
+              x2={width * (i + 1)}
+              y2={height * CEIL_HEIGHT_RATIO}
               stroke="white"
               strokeWidth={2}
-          />
-          <Line
-              x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
-              y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
-              x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
-              y2={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
-              stroke="white"
-              strokeWidth={2}
-          />
+            />
+          </>
+        )}
 
-          <SvgText
-              x={width * (i + 0.5)}
-              y={height * 0.35}
-              fontSize={24}
-              fill={'white'}
-              textAnchor="middle"
-              fontFamily="Arial"
-          >
-            {title}
-          </SvgText>
-          <Circle cx={width * (i + 0.55)} cy={height * 0.5} r={5} fill="white" />
-        </Svg>
-
-        <Pressable
-            onPress={handlePress}
-            accessibilityRole="button"
-            accessibilityLabel={`Maps to ${title}`}
-            style={[
-              styles.pressable,
-              {
-                left: doorX,
-                top: doorY,
-                width: doorW,
-                height: doorH,
-              },
-            ]}
+        {/* --- Door --- */}
+        <Rect
+          x={doorX}
+          y={doorY}
+          width={doorW}
+          height={doorH}
+          fill={doorFill}
         />
-      </View>
+        {/* Door Wireframe */}
+        <Line
+          x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y2={height * FLOOR_HEIGHT_RATIO}
+          stroke="white"
+          strokeWidth={2}
+        />
+        <Line
+          x1={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y2={height * FLOOR_HEIGHT_RATIO}
+          stroke="white"
+          strokeWidth={2}
+        />
+        <Line
+          x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
+          y1={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          x2={width * (i + 0.5 + DOOR_WIDTH_RATIO / 2)}
+          y2={height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO)}
+          stroke="white"
+          strokeWidth={2}
+        />
+
+        <SvgText
+          x={width * (i + 0.5)}
+          y={height * 0.35}
+          fontSize={24}
+          fill={'white'}
+          textAnchor="middle"
+          fontFamily="Arial"
+        >
+          {title}
+        </SvgText>
+        <Circle cx={width * (i + 0.55)} cy={height * 0.5} r={5} fill="white" />
+      </Svg>
+
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`Maps to ${title}`}
+        style={[
+          styles.pressable,
+          {
+            left: doorX,
+            top: doorY,
+            width: doorW,
+            height: doorH,
+          },
+        ]}
+      />
+    </View>
   );
 }
 
