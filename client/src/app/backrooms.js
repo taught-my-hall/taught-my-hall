@@ -5,13 +5,12 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useWindowDimensions, // 1. Import hook
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import useImage from 'use-image';
 
-// Adjust this path if your file is actually in utils
 import { apiClient } from '../../services/apiClient';
 import BackroomSegment from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
@@ -21,7 +20,6 @@ import { textures } from '../utils/textures';
 
 export default function BackroomScreen() {
   const router = useRouter();
-
   const { width, height } = useWindowDimensions();
   const svgWidth = width * 3;
 
@@ -43,7 +41,7 @@ export default function BackroomScreen() {
         setPalacesData(data);
       }
     } catch (err) {
-      console.error('Failed to load palaces:', err);
+      console.error(err);
     }
   }, []);
 
@@ -51,20 +49,19 @@ export default function BackroomScreen() {
     fetchPalaceList();
   }, [fetchPalaceList]);
 
-  // Texture loading
   const [imgWall1] = useImage(textures.wall1);
   const [imgWall2] = useImage(textures.wall2);
   const [imgFloor] = useImage(textures.wall4);
   const [imgWood] = useImage(textures.wood3);
 
   const imageMap = useMemo(
-    () => ({
-      wall1: imgWall1,
-      floor: imgFloor,
-      wall2: imgWall2,
-      wood1: imgWood,
-    }),
-    [imgWall1, imgWall2, imgFloor, imgWood]
+      () => ({
+        wall1: imgWall1,
+        floor: imgFloor,
+        wall2: imgWall2,
+        wood1: imgWood,
+      }),
+      [imgWall1, imgWall2, imgFloor, imgWood]
   );
 
   const textureConfig = {
@@ -76,29 +73,29 @@ export default function BackroomScreen() {
 
   const pointedIndices = [pointer - 1, pointer, pointer + 1];
 
-  const animateMove = direction => {
+  const animateMove = (direction) => {
     Animated.timing(offset, {
       toValue: width * -direction,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      setPointer(prev =>
-        direction < 0
-          ? Math.max(prev - 1, 0)
-          : Math.min(prev + 1, palaces.length - 1)
+      setPointer((prev) =>
+          direction < 0
+              ? Math.max(prev - 1, 0)
+              : Math.min(prev + 1, palaces.length - 1)
       );
       offset.setValue(0);
     });
   };
 
   const roomLeft = () => {
-    setPointerBefore(prev => Math.max(prev - 1, 0));
+    setPointerBefore((prev) => Math.max(prev - 1, 0));
     if (pointer === 0) return;
     animateMove(-1);
   };
 
   const roomRight = () => {
-    setPointerBefore(prev => Math.min(prev + 1, palaces.length - 1));
+    setPointerBefore((prev) => Math.min(prev + 1, palaces.length - 1));
     if (pointer === palaces.length - 1) return;
     animateMove(1);
   };
@@ -108,73 +105,76 @@ export default function BackroomScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Animated.View
-        key={`container-${width}`}
-        style={[
-          styles.svgBox,
-          {
-            width: svgWidth,
-            height: height,
-            transform: [{ translateX: offset }],
-          },
-        ]}
-      >
-        <View style={styles.roomsContainer}>
-          {pointedIndices.map((p, i) => {
-            if (p < 0 || p >= palaces.length) return null;
-
-            const isFirstRoom = p === 0;
-            const isLastRoom = p === palaces.length - 1;
-            const currentPalace = palaces[p];
-            console.log(currentPalace.name, currentPalace.id, p, i);
-            return (
-              <BackroomSegment
-                key={`palace-${currentPalace.id || p}`}
-                xOffset={i * width}
-                title={currentPalace.name}
-                images={textureConfig}
-                isFirst={isFirstRoom}
-                isLast={isLastRoom}
-                onPress={() => {
-                  router.navigate(`/palace/${currentPalace.id}`);
-                }}
-              />
-            );
-          })}
-        </View>
-      </Animated.View>
-
-      {/* Navigation Buttons */}
-      {pointerBefore !== 0 && (
-        <Pressable
-          style={[styles.button, styles.buttonLeft]}
-          onPress={roomLeft}
+      <View style={styles.container}>
+        <Animated.View
+            key={`container-${width}`}
+            style={[
+              styles.svgBox,
+              {
+                width: svgWidth,
+                height: height,
+                transform: [{ translateX: offset }],
+              },
+            ]}
         >
-          <Text selectable={false} style={styles.buttonText}>
-            {'<'}
-          </Text>
-        </Pressable>
-      )}
-      {palaces.length > 0 && pointerBefore !== palaces.length - 1 && (
-        <Pressable
-          style={[styles.button, styles.buttonRight]}
-          onPress={roomRight}
-        >
-          <Text selectable={false} style={styles.buttonText}>
-            {'>'}
-          </Text>
-        </Pressable>
-      )}
+          <View style={{ width: svgWidth, height: height }}>
+            {pointedIndices.map((p, i) => {
+              if (p < 0 || p >= palaces.length) return null;
 
-      <Pressable onPress={openNewPalace} style={styles.reviewButton}>
-        <Text style={styles.newPalaceText}>New Palace</Text>
-      </Pressable>
+              const currentPalace = palaces[p];
 
-      <Vignette isOpened={isNewPalaceOpen}>
-        <PalaceList />
-      </Vignette>
-    </View>
+              return (
+                  <View
+                      key={`palace-wrapper-${currentPalace.id || p}`}
+                      style={{ position: 'absolute', top: 0, left: 0, width, height }}
+                      pointerEvents="box-none"
+                  >
+                    <BackroomSegment
+                        i={i - 1}
+                        p={p}
+                        total={palaces.length}
+                        title={currentPalace.name}
+                        svgWidth={svgWidth}
+                        images={textureConfig}
+                        onPress={() => {
+                          router.navigate(`/palace/${currentPalace.id}`);
+                        }}
+                    />
+                  </View>
+              );
+            })}
+          </View>
+        </Animated.View>
+
+        {pointerBefore !== 0 && (
+            <Pressable
+                style={[styles.button, styles.buttonLeft]}
+                onPress={roomLeft}
+            >
+              <Text selectable={false} style={styles.buttonText}>
+                {'<'}
+              </Text>
+            </Pressable>
+        )}
+        {palaces.length > 0 && pointerBefore !== palaces.length - 1 && (
+            <Pressable
+                style={[styles.button, styles.buttonRight]}
+                onPress={roomRight}
+            >
+              <Text selectable={false} style={styles.buttonText}>
+                {'>'}
+              </Text>
+            </Pressable>
+        )}
+
+        <Pressable onPress={openNewPalace} style={styles.reviewButton}>
+          <Text style={styles.newPalaceText}>New Palace</Text>
+        </Pressable>
+
+        <Vignette isOpened={isNewPalaceOpen}>
+          <PalaceList />
+        </Vignette>
+      </View>
   );
 }
 
@@ -184,10 +184,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  roomsContainer: {
-    width: svgWidth,
-    height: height,
   },
   button: {
     position: 'absolute',
@@ -212,6 +208,7 @@ const styles = StyleSheet.create({
   svgBox: {
     position: 'absolute',
     top: 0,
+    left: 0,
   },
   reviewButton: {
     position: 'absolute',
