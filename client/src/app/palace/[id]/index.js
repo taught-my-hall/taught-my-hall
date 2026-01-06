@@ -2,11 +2,11 @@ import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions, // Implemented usage
 } from 'react-native';
 import {
   Gesture,
@@ -30,10 +30,7 @@ import {
 import { textures } from '../../../utils/textures';
 import FurnitureScreen from '../../furniture';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 const TILE_SIZE = 100;
-
 const WHEEL_SENSITIVITY = 0.005;
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 8;
@@ -49,15 +46,18 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 function PalaceScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+
+  // 1. Get Dynamic Screen Dimensions
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
   const [currentPalace, setCurrentPalace] = useState(() => {
     const allPalaces = getPalacesData();
-
     if (Array.isArray(allPalaces)) {
       return allPalaces.find(p => String(p.id) === String(id)) || null;
     }
-
     return null;
   });
+
   const pathname = usePathname();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
@@ -91,7 +91,6 @@ function PalaceScreen() {
     }
 
     const rawMap = currentPalace.palace_matrix;
-
     const grid = rawMap.map(row => row.map(cell => cell.split('_')));
     const height = grid.length;
     const width = grid[0]?.length || 0;
@@ -104,6 +103,35 @@ function PalaceScreen() {
       pixelHeight: height * TILE_SIZE,
     };
   }, [currentPalace]);
+
+  // 2. Fix Clamping Logic to use mapData and dynamic screenWidth/Height
+  useEffect(() => {
+    if (mapData.pixelWidth === 0) return; // Prevent run if data not ready
+
+    translateX.value = clampValues(
+      translateX.value,
+      scale.value,
+      mapData.pixelWidth, // Fixed: Was MAP_PIXEL_WIDTH
+      screenWidth
+    );
+    translateY.value = clampValues(
+      translateY.value,
+      scale.value,
+      mapData.pixelHeight, // Fixed: Was MAP_PIXEL_HEIGHT
+      screenHeight
+    );
+    savedTranslateX.value = translateX.value;
+    savedTranslateY.value = translateY.value;
+  }, [
+    screenWidth,
+    screenHeight,
+    scale,
+    translateX,
+    translateY,
+    savedTranslateX,
+    savedTranslateY,
+    mapData, // Added dependency
+  ]);
 
   const processedTiles = useMemo(() => {
     if (!mapData.grid.length) return [];
@@ -199,13 +227,13 @@ function PalaceScreen() {
             rawX,
             scale.value,
             mapData.pixelWidth,
-            SCREEN_WIDTH
+            screenWidth
           );
           translateY.value = clampValues(
             rawY,
             scale.value,
             mapData.pixelHeight,
-            SCREEN_HEIGHT
+            screenHeight
           );
         })
         .onEnd(() => {
@@ -220,6 +248,8 @@ function PalaceScreen() {
       isFurnitureOpen,
       scale,
       mapData,
+      screenWidth, // Added dep
+      screenHeight, // Added dep
     ]
   );
 
@@ -236,13 +266,13 @@ function PalaceScreen() {
             translateX.value,
             newScale,
             mapData.pixelWidth,
-            SCREEN_WIDTH
+            screenWidth // Fixed
           );
           translateY.value = clampValues(
             translateY.value,
             newScale,
             mapData.pixelHeight,
-            SCREEN_HEIGHT
+            screenHeight // Fixed
           );
         })
         .onEnd(() => {
@@ -258,6 +288,8 @@ function PalaceScreen() {
       savedTranslateX,
       savedTranslateY,
       mapData,
+      screenWidth, // Added dep
+      screenHeight, // Added dep
     ]
   );
 
@@ -277,8 +309,9 @@ function PalaceScreen() {
       const oldTranslateX = translateX.value;
       const oldTranslateY = translateY.value;
 
-      const screenCenterX = SCREEN_WIDTH / 2;
-      const screenCenterY = SCREEN_HEIGHT / 2;
+      // 3. Use dynamic screen dimensions in Wheel Logic
+      const screenCenterX = screenWidth / 2;
+      const screenCenterY = screenHeight / 2;
       const ROOM_CENTER_X = mapData.pixelWidth / 2;
       const ROOM_CENTER_Y = mapData.pixelHeight / 2;
 
@@ -370,13 +403,13 @@ function PalaceScreen() {
         newTranslateX,
         newScale,
         mapData.pixelWidth,
-        SCREEN_WIDTH
+        screenWidth // Fixed
       );
       translateY.value = clampValues(
         newTranslateY,
         newScale,
         mapData.pixelHeight,
-        SCREEN_HEIGHT
+        screenHeight // Fixed
       );
 
       savedTranslateX.value = translateX.value;
@@ -395,6 +428,8 @@ function PalaceScreen() {
       savedTranslateY,
       isFurnitureOpen,
       mapData,
+      screenWidth, // Added dep
+      screenHeight, // Added dep
     ]
   );
 
@@ -515,7 +550,6 @@ const style = StyleSheet.create({
     borderColor: '#FFF',
     borderWidth: 2,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 200, // Ensure button is above vignette
   },
   reviewButtonText: { fontSize: 24, color: '#FFF' },
 });

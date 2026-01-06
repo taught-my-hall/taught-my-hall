@@ -2,16 +2,15 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import useImage from 'use-image';
 
-// Adjust this path if your file is actually in utils
 import { apiClient } from '../../services/apiClient';
 import BackroomSegment from '../components/BackroomLines';
 import PalaceList from '../components/PalaceList';
@@ -19,11 +18,11 @@ import Vignette from '../components/Vignette';
 import { setPalacesData } from '../utils/tempData';
 import { textures } from '../utils/textures';
 
-const { width, height } = Dimensions.get('window');
-const svgWidth = width * 3;
-
 export default function BackroomScreen() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const svgWidth = width * 3;
+
   const isNewPalaceOpen = useSharedValue(false);
 
   const [palaces, setPalaces] = useState([]);
@@ -42,7 +41,7 @@ export default function BackroomScreen() {
         setPalacesData(data);
       }
     } catch (err) {
-      console.error('Failed to load palaces:', err);
+      console.error(err);
     }
   }, []);
 
@@ -50,7 +49,6 @@ export default function BackroomScreen() {
     fetchPalaceList();
   }, [fetchPalaceList]);
 
-  // Texture loading
   const [imgWall1] = useImage(textures.wall1);
   const [imgWall2] = useImage(textures.wall2);
   const [imgFloor] = useImage(textures.wall4);
@@ -109,34 +107,45 @@ export default function BackroomScreen() {
   return (
     <View style={styles.container}>
       <Animated.View
-        style={[styles.svgBox, { transform: [{ translateX: offset }] }]}
+        key={`container-${width}`}
+        style={[
+          styles.svgBox,
+          {
+            width: svgWidth,
+            height: height,
+            transform: [{ translateX: offset }],
+          },
+        ]}
       >
-        <View style={styles.roomsContainer}>
+        <View style={{ width: svgWidth, height: height }}>
           {pointedIndices.map((p, i) => {
             if (p < 0 || p >= palaces.length) return null;
 
-            const isFirstRoom = p === 0;
-            const isLastRoom = p === palaces.length - 1;
             const currentPalace = palaces[p];
-            console.log(currentPalace.name, currentPalace.id, p, i);
+
             return (
-              <BackroomSegment
-                key={`palace-${currentPalace.id || p}`}
-                xOffset={i * width}
-                title={currentPalace.name}
-                images={textureConfig}
-                isFirst={isFirstRoom}
-                isLast={isLastRoom}
-                onPress={() => {
-                  router.navigate(`/palace/${currentPalace.id}`);
-                }}
-              />
+              <View
+                key={`palace-wrapper-${currentPalace.id || p}`}
+                style={{ position: 'absolute', top: 0, left: 0, width, height }}
+                pointerEvents="box-none"
+              >
+                <BackroomSegment
+                  i={i - 1}
+                  p={p}
+                  total={palaces.length}
+                  title={currentPalace.name}
+                  svgWidth={svgWidth}
+                  images={textureConfig}
+                  onPress={() => {
+                    router.navigate(`/palace/${currentPalace.id}`);
+                  }}
+                />
+              </View>
             );
           })}
         </View>
       </Animated.View>
 
-      {/* Navigation Buttons */}
       {pointerBefore !== 0 && (
         <Pressable
           style={[styles.button, styles.buttonLeft]}
@@ -176,10 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  roomsContainer: {
-    width: svgWidth,
-    height: height,
-  },
   button: {
     position: 'absolute',
     backgroundColor: '#8d8d8d',
@@ -203,8 +208,7 @@ const styles = StyleSheet.create({
   svgBox: {
     position: 'absolute',
     top: 0,
-    width: svgWidth,
-    height: height,
+    left: 0,
   },
   reviewButton: {
     position: 'absolute',
