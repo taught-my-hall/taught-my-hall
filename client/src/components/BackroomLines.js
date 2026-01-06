@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import {
   Platform,
@@ -25,20 +26,24 @@ export default function BackroomLines({
   onPress,
   svgWidth,
 }) {
+  // Use hook for dynamic dimensions (Handles web resize automatically)
   const { width, height } = useWindowDimensions();
 
   const isFirst = p === 0;
   const isLast = p === total - 1;
 
+  // --- Dynamic Calculations ---
   const doorW = width * DOOR_WIDTH_RATIO;
   const doorH = height * DOOR_HEIGHT_RATIO;
 
+  // Center the door relative to the segment
   const doorX = width * (i + 0.5 - DOOR_WIDTH_RATIO / 2);
   const doorY = height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO);
 
   const canvasWidth = svgWidth || width;
 
-  const handlePress = e => {
+  const handlePress = (e) => {
+    // Fix for web: remove focus outline after click
     if (Platform.OS === 'web' && e?.target?.blur) {
       e.target.blur();
     }
@@ -48,7 +53,11 @@ export default function BackroomLines({
   };
 
   return (
-    <View style={{ width, height }} pointerEvents="box-none">
+    <View
+      // Apply width/height dynamically here so the container resizes
+      style={[styles.container, { width, height }]}
+      pointerEvents="box-none"
+    >
       <Svg
         height={height}
         width={canvasWidth}
@@ -58,12 +67,10 @@ export default function BackroomLines({
         {isFirst ? (
           <>
             <Polygon
-              points={`
-                ${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 0.51)},${height} 
-                ${width * i},${height}
-              `}
+              points={`${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 0.51)},${height} 
+            ${width * i},${height}`}
               fill={FLOOR_COLOR}
             />
             <Line
@@ -110,12 +117,10 @@ export default function BackroomLines({
         ) : (
           <>
             <Polygon
-              points={`
-                ${width * i},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 0.51)},${height} 
-                ${width * i},${height}
-              `}
+              points={`${width * i},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 0.51)},${height} 
+            ${width * i},${height}`}
               fill={FLOOR_COLOR}
             />
             <Line
@@ -136,16 +141,13 @@ export default function BackroomLines({
             />
           </>
         )}
-
         {isLast ? (
           <>
             <Polygon
-              points={`
-                ${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 1)},${height} 
-                ${width * (i + 0.5)},${height}
-              `}
+              points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 1)},${height} 
+            ${width * (i + 0.5)},${height}`}
               fill={FLOOR_COLOR}
             />
             <Line
@@ -192,12 +194,10 @@ export default function BackroomLines({
         ) : (
           <>
             <Polygon
-              points={`
-                ${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 1)},${height * FLOOR_HEIGHT_RATIO} 
-                ${width * (i + 1)},${height} 
-                ${width * (i + 0.5)},${height}
-              `}
+              points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 1)},${height * FLOOR_HEIGHT_RATIO} 
+            ${width * (i + 1)},${height} 
+            ${width * (i + 0.5)},${height}`}
               fill={FLOOR_COLOR}
             />
             <Line
@@ -218,7 +218,6 @@ export default function BackroomLines({
             />
           </>
         )}
-
         {/* Door Lines */}
         <Line
           x1={width * (i + 0.5 - DOOR_WIDTH_RATIO / 2)}
@@ -244,12 +243,11 @@ export default function BackroomLines({
           stroke="white"
           strokeWidth={2}
         />
-
         <SvgText
           x={width * (i + 0.5)}
           y={height * 0.35}
           fontSize={24}
-          fill="white"
+          fill={'white'}
           textAnchor="middle"
           fontFamily="Arial"
         >
@@ -286,6 +284,9 @@ BackroomLines.propTypes = {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    // Width and height are handled dynamically via inline styles
+  },
   svg: {
     position: 'absolute',
     top: 0,

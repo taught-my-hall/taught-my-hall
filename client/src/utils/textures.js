@@ -7,9 +7,14 @@ const pathSwitch = path => (isWeb ? path : `../../public${path}`);
 export const textures = {
   wood1: pathSwitch('/textures/wood1.png'),
   wood2: pathSwitch('/textures/wood2.png'),
+  wood3: pathSwitch('/textures/wood3.png'),
   stone1: pathSwitch('/textures/stone1.png'),
   brick1: pathSwitch('/textures/brick1.png'),
   planks1: pathSwitch('/textures/planks1.png'),
+  wall1: pathSwitch('/textures/wall1.png'),
+  wall2: pathSwitch('/textures/wall2.png'),
+  wall3: pathSwitch('/textures/wall3.png'),
+  wall4: pathSwitch('/textures/wall4.png'),
   furniture: pathSwitch('/textures/furniture.png'),
 };
 
