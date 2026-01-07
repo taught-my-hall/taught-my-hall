@@ -59,7 +59,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.common.CommonMiddleware',  
 ]
 
 ROOT_URLCONF = 'memory_palace.urls'
@@ -93,9 +92,6 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
-        'OPTIONS': {
-                    'sslmode': 'require',
-                },
     }
 }
 
@@ -143,20 +139,10 @@ USE_TZ = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-APPEND_SLASH = True
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Allow the app to run on Google Cloud URLs
-ALLOWED_HOSTS = ['*'] # We will narrow this down later if you want
-
-# Fix for CSRF errors on Google Cloud
-CSRF_TRUSTED_ORIGINS = ['https://*.run.app']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
