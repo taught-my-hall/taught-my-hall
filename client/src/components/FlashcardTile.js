@@ -1,8 +1,9 @@
+import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { iconsFishcards } from '../utils/textures';
 
-export default function FlashcardTile(flashcard) {
+export default function FlashcardTile({ flashcard }) {
   const [hidden, setHidden] = useState(true);
 
   const handleToggleQuestion = questionId => {
@@ -43,6 +44,10 @@ export default function FlashcardTile(flashcard) {
     </Pressable>
   );
 }
+
+FlashcardTile.propTypes = {
+  flashcard: PropTypes.object,
+};
 
 const styles = StyleSheet.create({
   tile: {
