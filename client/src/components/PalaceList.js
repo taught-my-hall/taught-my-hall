@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Brain, Pencil, Plus, Sparkles } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { setTempPalaceMatrix } from '../utils/tempData';
 
 const PalaceCard = ({ title, icon: Icon, iconColor, borderColor, onPress }) => (
   <TouchableOpacity
@@ -37,7 +38,10 @@ export default function PalaceList() {
       <Text style={styles.headerTitle}>Add new Palace</Text>
 
       <PalaceCard
-        onPress={() => router.navigate('/palace/create')}
+        onPress={() => {
+          setTempPalaceMatrix(null);
+          router.navigate('/palace/create');
+        }}
         title="Create new palace"
         icon={Pencil}
         iconColor="#FFF"

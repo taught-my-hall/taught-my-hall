@@ -4,7 +4,6 @@ import { Layer, Stage } from 'react-konva';
 import {
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,6 +17,9 @@ import {
 } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
+  scrollTo,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
@@ -54,6 +56,7 @@ export default function PalaceSetupScreen() {
   const [matrix, setMatrix] = useState(() => getTempPalaceMatrix());
   const [selectedFurniture, setSelectedFurniture] = useState(null);
 
+  // Gesty mapy
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -61,6 +64,15 @@ export default function PalaceSetupScreen() {
   const translateY = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
   const isFurnitureOpen = useSharedValue(false);
+
+  // Gesty listy (scroll)
+  const listScrollY = useSharedValue(0);
+  const startScrollY = useSharedValue(0); // NOWE: Zastępuje ctx.startScrollY
+  const isDraggingScroll = useSharedValue(false);
+
+  const [listHeight, setListHeight] = useState(0);
+  const [listContentHeight, setListContentHeight] = useState(0);
+  const scrollViewRef = useAnimatedRef();
 
   const layerRef = useRef(null);
 
@@ -104,12 +116,10 @@ export default function PalaceSetupScreen() {
 
     setMatrix(prevMatrix => {
       if (!prevMatrix[row] || !prevMatrix[row][col]) return prevMatrix;
-
       const newMatrix = [...prevMatrix];
       const newRow = [...newMatrix[row]];
       const cellString = newRow[col];
       const parts = cellString.split('_');
-
       const currentFurniture = parts[1];
 
       if (currentFurniture === selectedFurniture) {
@@ -117,26 +127,18 @@ export default function PalaceSetupScreen() {
       } else {
         parts[1] = selectedFurniture;
       }
-
       newRow[col] = parts.join('_');
       newMatrix[row] = newRow;
       return newMatrix;
     });
   };
 
-  // Zmiana 3: Logika tapnięcia przyjmuje x i y jako argumenty
-  // Używamy SCREEN_WIDTH z hooka useWindowDimensions
   const handleTapLogic = (tapX, tapY) => {
     const screenCenterX = SCREEN_WIDTH / 2;
     const screenCenterY = SCREEN_HEIGHT / 2;
     const ROOM_CENTER_X = MAP_PIXEL_WIDTH / 2;
     const ROOM_CENTER_Y = MAP_PIXEL_HEIGHT / 2;
 
-    // Odwracamy transformacje:
-    // 1. Odejmujemy środek ekranu (żeby mieć 0 na środku)
-    // 2. Odejmujemy przesunięcie (translateX)
-    // 3. Dzielimy przez skalę (zoom)
-    // 4. Dodajemy środek pokoju (żeby wrócić do układu współrzędnych mapy 0,0 w lewym górnym rogu)
     const mapX =
       (tapX - screenCenterX - translateX.value) / scale.value + ROOM_CENTER_X;
     const mapY =
@@ -144,9 +146,6 @@ export default function PalaceSetupScreen() {
 
     const col = Math.floor(mapX / TILE_SIZE);
     const row = Math.floor(mapY / TILE_SIZE);
-
-    // Dodatkowe logi do debugowania, jeśli nadal nie działa
-    // console.log({ tapX, screenCenterX, transX: translateX.value, scale: scale.value, mapX, col });
 
     if (row >= 0 && row < MAP_HEIGHT && col >= 0 && col < MAP_WIDTH) {
       toggleFurnitureAt(row, col);
@@ -158,13 +157,11 @@ export default function PalaceSetupScreen() {
     SPLIT_MAP.forEach((row, i) => {
       row.forEach((tile, j) => {
         const el = tile[0];
-
         const check = (r, c) => {
           if (r < 0 || r >= MAP_HEIGHT || c < 0 || c >= MAP_WIDTH) return true;
           if (!SPLIT_MAP[r] || !SPLIT_MAP[r][c]) return true;
           return SPLIT_MAP[r][c][0] !== el;
         };
-
         const checkDiag = (r, c) => {
           if (r < 0 || r >= MAP_HEIGHT || c < 0 || c >= MAP_WIDTH) return true;
           if (!SPLIT_MAP[r] || !SPLIT_MAP[r][c]) return true;
@@ -175,7 +172,6 @@ export default function PalaceSetupScreen() {
         const bottom = check(i + 1, j);
         const left = check(i, j - 1);
         const right = check(i, j + 1);
-
         const topLeft = checkDiag(i - 1, j - 1);
         const topRight = checkDiag(i - 1, j + 1);
         const bottomLeft = checkDiag(i + 1, j - 1);
@@ -234,6 +230,7 @@ export default function PalaceSetupScreen() {
     return () => cancelAnimationFrame(cacheHandle);
   }, [processedTiles, imageMap, MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT]);
 
+  // --- Gesty Mapy ---
   const panGesture = Gesture.Pan()
     .minDistance(3)
     .averageTouches(true)
@@ -241,6 +238,8 @@ export default function PalaceSetupScreen() {
       isFurnitureOpen.value = false;
     })
     .onUpdate(e => {
+      if (isDraggingScroll.value) return;
+
       const rawX = savedTranslateX.value + e.translationX;
       const rawY = savedTranslateY.value + e.translationY;
       translateX.value = clampValues(
@@ -257,6 +256,7 @@ export default function PalaceSetupScreen() {
       );
     })
     .onEnd(() => {
+      if (isDraggingScroll.value) return;
       savedTranslateX.value = translateX.value;
       savedTranslateY.value = translateY.value;
     });
@@ -267,7 +267,6 @@ export default function PalaceSetupScreen() {
       const newScale = Math.min(Math.max(rawScale, MIN_SCALE), MAX_SCALE);
       scale.value = newScale;
 
-      // Przy zoomowaniu też clampujemy, żeby nie uciekło
       translateX.value = clampValues(
         translateX.value,
         newScale,
@@ -285,7 +284,6 @@ export default function PalaceSetupScreen() {
       savedScale.value = scale.value;
     });
 
-  // Zmiana 4: Przekazujemy e.x i e.y explicite do runOnJS
   const tapGesture = Gesture.Tap()
     .maxDuration(250)
     .onEnd(e => {
@@ -296,6 +294,71 @@ export default function PalaceSetupScreen() {
     tapGesture,
     Gesture.Simultaneous(panGesture, pinchGesture)
   );
+
+  // --- Gesty Listy (Scrollbar) ---
+  const scrollHandler = useAnimatedScrollHandler(event => {
+    if (!isDraggingScroll.value) {
+      listScrollY.value = event.contentOffset.y;
+    }
+  });
+
+  const panScrollGesture = Gesture.Pan()
+    .averageTouches(true)
+    .activateAfterLongPress(0)
+    .onStart(() => {
+      // NAPRAWA: Używamy sharedValue zamiast contextu
+      isDraggingScroll.value = true;
+      startScrollY.value = listScrollY.value;
+    })
+    .onUpdate(e => {
+      const visibleHeight = listHeight;
+      const fullHeight = listContentHeight;
+
+      if (fullHeight <= visibleHeight || visibleHeight === 0) return;
+
+      const indicatorHeight = (visibleHeight / fullHeight) * visibleHeight;
+      const maxScroll = fullHeight - visibleHeight;
+      const maxIndicatorMove = visibleHeight - indicatorHeight;
+
+      const multiplier = maxScroll / maxIndicatorMove;
+
+      // NAPRAWA: Bierzemy wartość z sharedValue
+      const targetScrollY = startScrollY.value + e.translationY * multiplier;
+
+      const clampedScrollY = Math.min(Math.max(targetScrollY, 0), maxScroll);
+
+      listScrollY.value = clampedScrollY;
+
+      scrollTo(scrollViewRef, 0, clampedScrollY, false);
+    })
+    .onEnd(() => {
+      isDraggingScroll.value = false;
+    })
+    .onFinalize(() => {
+      isDraggingScroll.value = false;
+    });
+
+  const scrollIndicatorStyle = useAnimatedStyle(() => {
+    const visibleHeight = listHeight;
+    const fullHeight = listContentHeight;
+
+    if (fullHeight <= visibleHeight || visibleHeight === 0) {
+      return { opacity: 0 };
+    }
+
+    const indicatorHeight = (visibleHeight / fullHeight) * visibleHeight;
+    const maxScroll = fullHeight - visibleHeight;
+    const maxIndicatorMove = visibleHeight - indicatorHeight;
+
+    const scrollRatio = listScrollY.value / maxScroll;
+    const translateY = scrollRatio * maxIndicatorMove;
+
+    return {
+      height: indicatorHeight,
+      transform: [{ translateY: isNaN(translateY) ? 0 : translateY }],
+      opacity: 1,
+    };
+  });
 
   const handleWheel = useCallback(e => {}, []);
 
@@ -314,9 +377,9 @@ export default function PalaceSetupScreen() {
       style={style.body}
       {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
     >
+      {/* Mapa pod spodem */}
       <GestureDetector gesture={composedGestures}>
         <Animated.View style={style.container}>
-          {/* Zmiana 5: Upewniamy się, że wrapper ma rozmiar całej mapy */}
           <Animated.View
             style={[
               style.rectangle,
@@ -337,43 +400,64 @@ export default function PalaceSetupScreen() {
         </Animated.View>
       </GestureDetector>
 
-      {/* --- SIDEBAR LIST (Furniture) --- */}
-      <View style={style.furnitureListBlock}>
+      {/* Sidebar na wierzchu */}
+      <View
+        style={style.furnitureListBlock}
+        onLayout={e => setListHeight(e.nativeEvent.layout.height - 40)}
+      >
         <Text style={style.headerListTitle}>Furniture</Text>
-        <ScrollView contentContainerStyle={style.furnitureListContent}>
-          {Object.keys(FURNITURE_MAP).map(key => {
-            const isSelected = selectedFurniture === key;
-            return (
-              <TouchableOpacity
-                key={key}
-                onPress={() => setSelectedFurniture(isSelected ? null : key)}
-                style={[
-                  style.furnitureItem,
-                  isSelected && style.furnitureItemActive,
-                ]}
-              >
-                {/* Zmiana: Optymalizacja Sidebaru - jeśli renderowanie wielu Stage 
-                   powoduje lagi, można tu użyć statycznych obrazków PNG, 
-                   ale zostawiam jak jest zgodnie z Twoim kodem, bo prosiłeś tylko o fixa klikania.
-                */}
-                {furnitureSheet && (
-                  <View style={{ width: 40, height: 40, overflow: 'hidden' }}>
-                    <Stage width={40} height={40}>
-                      <Layer>
-                        <Furniture
-                          modelname={key}
-                          image={furnitureSheet}
-                          tileSize={40}
-                        />
-                      </Layer>
-                    </Stage>
-                  </View>
-                )}
-                <Text style={{ color: 'white', fontSize: 10 }}>{key}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+
+        {/* ZMIANA: Usunięto flexDirection: 'row', dodano position: 'relative' */}
+        <View style={{ flex: 1, width: '100%', position: 'relative' }}>
+          <Animated.ScrollView
+            ref={scrollViewRef}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={style.furnitureListContent}
+            onContentSizeChange={(w, h) => setListContentHeight(h)}
+          >
+            {/* (Zawartość listy mebli bez zmian) */}
+            {Object.keys(FURNITURE_MAP).map(key => {
+              const isSelected = selectedFurniture === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setSelectedFurniture(isSelected ? null : key)}
+                  style={[
+                    style.furnitureItem,
+                    isSelected && style.furnitureItemActive,
+                  ]}
+                >
+                  {furnitureSheet && (
+                    <View style={{ width: 40, height: 40, overflow: 'hidden' }}>
+                      <Stage width={40} height={40}>
+                        <Layer>
+                          <Furniture
+                            modelname={key}
+                            image={furnitureSheet}
+                            tileSize={40}
+                          />
+                        </Layer>
+                      </Stage>
+                    </View>
+                  )}
+                  <Text style={{ color: 'white', fontSize: 10 }}>{key}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </Animated.ScrollView>
+
+          {/* Tor paska przewijania - jest teraz pozycjonowany absolutnie "nad" listą */}
+          <View style={style.customScrollTrack}>
+            <GestureDetector gesture={panScrollGesture}>
+              <Animated.View
+                hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+                style={[style.customScrollBar, scrollIndicatorStyle]}
+              />
+            </GestureDetector>
+          </View>
+        </View>
       </View>
 
       <Pressable
@@ -405,9 +489,7 @@ const style = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  rectangle: {
-    // backgroundColor: '#4a90e2', // Opcjonalnie wyłącz kolor tła, żeby widzieć tylko mapę
-  },
+  rectangle: {},
   reviewButton: {
     position: 'absolute',
     bottom: 50,
@@ -425,9 +507,10 @@ const style = StyleSheet.create({
   reviewButtonText: { fontSize: 24, color: '#FFF' },
   furnitureListBlock: {
     position: 'absolute',
+    overflow: 'hidden',
     left: 50,
     top: 50,
-    width: 100,
+    width: 200,
     height: '80%',
     backgroundColor: '#000',
     borderWidth: 2,
@@ -436,6 +519,11 @@ const style = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
     zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   headerListTitle: {
     color: '#FFFFFF',
@@ -445,13 +533,17 @@ const style = StyleSheet.create({
     textAlign: 'center',
   },
   furnitureListContent: {
-    alignItems: 'center',
-    gap: 15,
-    paddingBottom: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    paddingBottom: 80,
+    paddingRight: 18,
+    paddingLeft: 4,
   },
   furnitureItem: {
-    width: 60,
-    height: 60,
+    width: 78,
+    height: 75,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -461,5 +553,23 @@ const style = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFF',
     backgroundColor: '#444',
+  },
+  customScrollTrack: {
+    position: 'absolute',
+    right: 6,
+    top: 0,
+    bottom: 0,
+    width: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    zIndex: 101,
+  },
+  customScrollBar: {
+    width: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    marginVertical: 2,
   },
 });
