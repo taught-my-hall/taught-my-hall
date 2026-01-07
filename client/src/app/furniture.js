@@ -7,71 +7,126 @@ import {
   Text,
   View,
 } from 'react-native';
-import { apiClient } from '../../services/apiClient';
-import { iconsFishcards, iconsGui } from '../utils/textures';
-
-const iconList = Object.keys(iconsFishcards);
+import EmptyFlashcardTile from '../components/EmptyFlashcardTile';
+import FlashcardTile from '../components/FlashcardTile';
+import { iconsGui } from '../utils/textures';
 
 export default function FurnitureScreen() {
-  const [questions, setQuestions] = useState([]);
+  const [flashcards, setFlashcards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [areAllVisible, setAreAllVisible] = useState(false);
+  const [revealedFlashcardIndexes, setRevealedFlashcardIndexes] = useState([]);
 
-  const refetchQuestions = useCallback(async () => {
-    setIsLoading(true);
+  // TODO: real flashcards fetch when backend implements it
+  const refetchFlashcards = useCallback(async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const data = [
+      {
+        id: 2,
+        front: 'Which bacteria is primarily used in soybean inoculants?',
+        back: 'Bradyrhizobium japonicum.',
+        interval: 1,
+        ease_factor: 2.5,
+        repetition: 0,
+        next_review: new Date('2025-12-12T15:14:51.987000Z'),
+        created_at: new Date('2025-12-12T15:14:51.989000Z'),
+        updated_at: new Date('2025-12-12T15:14:51.989000Z'),
+        furniture_slot_index: 0,
+      },
+      {
+        id: 3,
+        front: 'What is the main purpose of soybean inoculation?',
+        back: 'To enhance nitrogen fixation and improve plant growth.',
+        interval: 1,
+        ease_factor: 2.5,
+        repetition: 0,
+        next_review: new Date('2025-12-12T15:14:51.991000Z'),
+        created_at: new Date('2025-12-12T15:14:51.992000Z'),
+        updated_at: new Date('2025-12-12T15:14:51.992000Z'),
+        furniture_slot_index: 1,
+      },
+      {
+        id: 4,
+        front:
+          'Do soybeans naturally contain nitrogen-fixing bacteria in all soils?',
+        back: 'No, many soils lack effective Bradyrhizobium strains.',
+        interval: 1,
+        ease_factor: 2.5,
+        repetition: 0,
+        next_review: new Date('2025-12-12T15:14:51.994000Z'),
+        created_at: new Date('2025-12-12T15:14:51.996000Z'),
+        updated_at: new Date('2025-12-12T15:14:51.996000Z'),
+        furniture_slot_index: 6,
+      },
+      {
+        id: 5,
+        front: 'When should soybeans be inoculated?',
+        back: 'Shortly before sowing.',
+        interval: 1,
+        ease_factor: 2.5,
+        repetition: 0,
+        next_review: new Date('2025-12-12T15:14:52.129000Z'),
+        created_at: new Date('2025-12-12T15:14:52.130000Z'),
+        updated_at: new Date('2025-12-12T15:14:52.130000Z'),
+        furniture_slot_index: 3,
+      },
+      {
+        id: 6,
+        front:
+          'What environmental factor negatively affects inoculant bacteria?',
+        back: 'High temperatures and direct sunlight.',
+        interval: 1,
+        ease_factor: 2.5,
+        repetition: 0,
+        next_review: new Date('2025-12-12T15:14:52.133000Z'),
+        created_at: new Date('2025-12-12T15:14:52.134000Z'),
+        updated_at: new Date('2025-12-12T15:14:52.134000Z'),
+        furniture_slot_index: 8,
+      },
+    ];
+
+    setFlashcards(data);
+    setIsLoading(false);
     setError('');
-
-    try {
-      const data = await apiClient(`/api/furniture/2/flashcards/`, {
-        method: 'GET',
-      });
-      if (data) {
-        const rawList = Array.isArray(data) ? data : data.questions || [];
-
-        const formattedQuestions = rawList.map(q => ({
-          ...q,
-          front: q.front || q.question || '?',
-          back: q.back || q.answer || '?',
-          hidden: true,
-        }));
-
-        setQuestions(formattedQuestions);
-      } else {
-        setQuestions([]);
-      }
-    } catch (err) {
-      console.error('Failed to load flashcards:', err);
-      setError('Something went wrong, please try again');
-    } finally {
-      setIsLoading(false);
-    }
   }, []);
 
   useEffect(() => {
-    refetchQuestions();
-  }, [refetchQuestions]);
+    refetchFlashcards();
+  }, [refetchFlashcards]);
 
-  const handleToggleQuestion = questionId => {
-    setQuestions(prev =>
-      prev.map(q => {
-        if (q.id === questionId) {
-          return { ...q, hidden: !q.hidden };
-        }
-        return q;
-      })
-    );
+  const getFlashcardWithIndex = index => {
+    return flashcards.find(f => f.furniture_slot_index === index);
   };
 
   const handleGlobalToggle = () => {
-    const newState = !areAllVisible;
-    setAreAllVisible(newState);
-    setQuestions(prev => prev.map(q => ({ ...q, hidden: !newState })));
+    if (areAllFlashcardsRevealed()) {
+      setRevealedFlashcardIndexes([]);
+    } else {
+      setRevealedFlashcardIndexes(flashcards.map(f => f.furniture_slot_index));
+    }
   };
 
-  const getIconForIndex = index => {
-    const iconName = iconsFishcards[iconList[index % iconList.length]];
-    return { uri: iconName };
+  const areAllFlashcardsRevealed = () => {
+    const flashcardIndexes = flashcards.map(f => f.furniture_slot_index).sort();
+    const revealedIndexes = [...revealedFlashcardIndexes].sort();
+    if (flashcardIndexes.length !== revealedIndexes.length) return false;
+    for (let i = 0; i < flashcardIndexes.length; i++) {
+      if (flashcardIndexes[i] !== revealedIndexes[i]) return false;
+    }
+    return revealedFlashcardIndexes.length === flashcards.length;
+  };
+
+  const handleToggleFlashcard = index => {
+    if (isFlashcardRevealed(index)) {
+      setRevealedFlashcardIndexes(prev => prev.filter(i => i !== index));
+    } else {
+      setRevealedFlashcardIndexes(prev => [...prev, index]);
+    }
+  };
+
+  const isFlashcardRevealed = index => {
+    return revealedFlashcardIndexes.includes(index);
   };
 
   return (
@@ -82,7 +137,9 @@ export default function FurnitureScreen() {
           <Pressable onPress={handleGlobalToggle} style={styles.eyeButton}>
             <Image
               source={{
-                uri: areAllVisible ? iconsGui['eye'] : iconsGui['eye-slash'],
+                uri: areAllFlashcardsRevealed()
+                  ? iconsGui['eye-slash']
+                  : iconsGui.eye,
               }}
               style={styles.eyeIcon}
               resizeMode="contain"
@@ -93,58 +150,35 @@ export default function FurnitureScreen() {
         {isLoading && (
           <View style={styles.centerBox}>
             <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.infoText}>Loading questions...</Text>
+            <Text style={styles.infoText}>Loading flashcards...</Text>
           </View>
         )}
 
         {!!error && (
           <View style={styles.centerBox}>
             <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={refetchQuestions}>
+            <Pressable style={styles.retryBtn} onPress={refetchFlashcards}>
               <Text style={styles.retryText}>Try again</Text>
             </Pressable>
           </View>
         )}
 
-        {!isLoading && !error && questions.length > 0 && (
+        {!isLoading && !error && flashcards.length > 0 && (
           <View style={styles.gridContainer}>
-            {questions.map((q, index) => {
-              const iconSource = getIconForIndex(index);
-
-              return (
-                <Pressable
-                  key={q.id}
-                  onPress={() => handleToggleQuestion(q.id)}
-                  style={[
-                    styles.tile,
-                    q.hidden ? styles.tileHidden : styles.tileRevealed,
-                  ]}
-                >
-                  {q.hidden ? (
-                    <Image
-                      source={iconSource}
-                      style={styles.hiddenIcon}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <View style={styles.revealedContent}>
-                      <Text style={styles.label}>Question:</Text>
-                      <Text style={styles.questionText}>{q.front}</Text>
-
-                      <View style={styles.separator} />
-
-                      <Text style={styles.label}>Answer:</Text>
-                      <Text style={styles.answerText}>{q.back}</Text>
-
-                      <Image
-                        source={iconSource}
-                        style={styles.watermark}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  )}
-                </Pressable>
-              );
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => {
+              const flashcard = getFlashcardWithIndex(index);
+              if (flashcard) {
+                return (
+                  <FlashcardTile
+                    key={index}
+                    flashcard={flashcard}
+                    hidden={!isFlashcardRevealed(index)}
+                    onToggle={() => handleToggleFlashcard(index)}
+                  />
+                );
+              } else {
+                return <EmptyFlashcardTile key={index} />;
+              }
             })}
           </View>
         )}
@@ -161,11 +195,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     padding: 16,
+    position: 'relative',
   },
   main: {
     width: '100%',
     maxWidth: 900,
     backgroundColor: 'rgba(0,0,0,0.3)',
+    flex: '1',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
@@ -202,6 +238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
+
   infoText: {
     color: '#ddd',
     marginTop: 10,
@@ -221,70 +258,12 @@ const styles = StyleSheet.create({
   retryText: { color: '#fff' },
 
   gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gridTemplateRows: '1fr 1fr 1fr',
     gap: 16,
-  },
-
-  tile: {
-    width: 160,
-    height: 160,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-
-  tileHidden: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 0,
-  },
-  hiddenIcon: {
-    width: 80,
-    height: 80,
-    tintColor: '#000',
-    opacity: 0.6,
-  },
-
-  tileRevealed: {
-    backgroundColor: '#121212',
-    borderWidth: 2,
-    borderColor: '#fff',
-    padding: 12,
-  },
-  revealedContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  label: {
-    color: '#aaa',
-    fontSize: 10,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  questionText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  answerText: {
-    color: '#ddd',
-    fontSize: 13,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#444',
-    marginVertical: 6,
-  },
-  watermark: {
-    position: 'absolute',
-    bottom: -10,
-    right: -10,
-    width: 60,
-    height: 60,
-    opacity: 0.1,
-    tintColor: '#fff',
+    alignItems: 'stretch',
+    justifyItems: 'stretch',
+    flex: '1',
   },
 });
