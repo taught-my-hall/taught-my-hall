@@ -37,8 +37,8 @@ export default function LoginScreen() {
   const handleDemoLogin = async () => {
     setErrorMessage('');
     setLoadingType('demo');
-    setInputEmail('demo@example.com')
-    setInputPassword('pass1234')
+    setInputEmail('demo@example.com');
+    setInputPassword('pass1234');
     await executeLogin('demo@example.com', 'pass1234');
   };
 
@@ -61,79 +61,79 @@ export default function LoginScreen() {
   };
 
   return (
-      <View style={styles.container}>
-        <View style={styles.form}>
-          <Text style={styles.heading}>TaughtMyHall</Text>
+    <View style={styles.container}>
+      <View style={styles.form}>
+        <Text style={styles.heading}>TaughtMyHall</Text>
 
-          {errorMessage ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-          ) : null}
-
-          <View>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-                style={styles.input}
-                onChangeText={(text) => {
-                  setInputEmail(text);
-                  setErrorMessage('');
-                }}
-                value={inputEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                placeholder={"bob@example.com"}
-                placeholderTextColor={'gray'}
-            />
+        {errorMessage ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
+        ) : null}
 
-          <View>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-                style={styles.input}
-                onChangeText={(text) => {
-                  setInputPassword(text);
-                  setErrorMessage('');
-                }}
-                value={inputPassword}
-                secureTextEntry
-                placeholder={"*******"}
-                placeholderTextColor={'gray'}
-            />
-          </View>
-
-          <Pressable
-              style={styles.primaryButton}
-              onPress={handleLogin}
-              disabled={loadingType !== null}
-          >
-            {loadingType === 'login' ? (
-                <ActivityIndicator color="#fff" />
-            ) : (
-                <Text style={styles.primaryButtonText}>Login</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-              style={styles.demoButton}
-              onPress={handleDemoLogin}
-              disabled={loadingType !== null}
-          >
-            {loadingType === 'demo' ? (
-                <ActivityIndicator color="#fff" />
-            ) : (
-                <Text style={styles.demoButtonText}>Demo Login</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-              style={styles.smallLink}
-              onPress={() => router.navigate('/register')}
-          >
-            <Text style={styles.createAccount}>Create account</Text>
-          </Pressable>
+        <View>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={text => {
+              setInputEmail(text);
+              setErrorMessage('');
+            }}
+            value={inputEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder={'bob@example.com'}
+            placeholderTextColor={'gray'}
+          />
         </View>
+
+        <View>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={text => {
+              setInputPassword(text);
+              setErrorMessage('');
+            }}
+            value={inputPassword}
+            secureTextEntry
+            placeholder={'*******'}
+            placeholderTextColor={'gray'}
+          />
+        </View>
+
+        <Pressable
+          style={styles.primaryButton}
+          onPress={handleLogin}
+          disabled={loadingType !== null}
+        >
+          {loadingType === 'login' ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Login</Text>
+          )}
+        </Pressable>
+
+        <Pressable
+          style={styles.demoButton}
+          onPress={handleDemoLogin}
+          disabled={loadingType !== null}
+        >
+          {loadingType === 'demo' ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.demoButtonText}>Demo Login</Text>
+          )}
+        </Pressable>
+
+        <Pressable
+          style={styles.smallLink}
+          onPress={() => router.navigate('/register')}
+        >
+          <Text style={styles.createAccount}>Create account</Text>
+        </Pressable>
       </View>
+    </View>
   );
 }
 
