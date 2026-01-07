@@ -91,5 +91,6 @@ const style = StyleSheet.create({
     borderRadius: 30,
     borderColor: 'white',
     borderWidth: 2,
+    overflow: 'hidden',
   },
 });
