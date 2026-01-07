@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { iconsFishcards } from '../utils/textures';
 
-export default function FlashcardTile({ flashcard }) {
-  const [hidden, setHidden] = useState(true);
+export default function FlashcardTile({ flashcard, onToggle, hidden }) {
   const [isEditing, setIsEditing] = useState(false);
   const [front, setFront] = useState(flashcard.front);
   const [back, setBack] = useState(flashcard.back);
@@ -25,10 +24,6 @@ export default function FlashcardTile({ flashcard }) {
     console.log(front);
     console.log(back);
     setIsEditing(false);
-  };
-
-  const handleToggleQuestion = () => {
-    setHidden(prev => !prev);
   };
 
   // TODO: flashcards should have their own icons saved in the database
@@ -83,10 +78,7 @@ export default function FlashcardTile({ flashcard }) {
           </View>
 
           <View style={styles.actionButtons}>
-            <Pressable
-              style={styles.actionButton}
-              onPress={handleToggleQuestion}
-            >
+            <Pressable style={styles.actionButton} onPress={onToggle}>
               {hidden ? 'Show' : 'Hide'}
             </Pressable>
 
@@ -102,6 +94,8 @@ export default function FlashcardTile({ flashcard }) {
 
 FlashcardTile.propTypes = {
   flashcard: PropTypes.object,
+  onToggle: PropTypes.func,
+  hidden: PropTypes.bool,
 };
 
 const styles = StyleSheet.create({

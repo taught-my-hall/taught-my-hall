@@ -15,6 +15,7 @@ export default function FurnitureScreen() {
   const [flashcards, setFlashcards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [revealedFlashcardIndexes, setRevealedFlashcardIndexes] = useState([]);
 
   // TODO: real flashcards fetch when backend implements it
   const refetchFlashcards = useCallback(async () => {
@@ -99,7 +100,33 @@ export default function FurnitureScreen() {
   };
 
   const handleGlobalToggle = () => {
-    // TODO: restore feature of revealing all
+    if (areAllFlashcardsRevealed()) {
+      setRevealedFlashcardIndexes([]);
+    } else {
+      setRevealedFlashcardIndexes(flashcards.map(f => f.furniture_slot_index));
+    }
+  };
+
+  const areAllFlashcardsRevealed = () => {
+    const flashcardIndexes = flashcards.map(f => f.furniture_slot_index).sort();
+    const revealedIndexes = [...revealedFlashcardIndexes].sort();
+    if (flashcardIndexes.length !== revealedIndexes.length) return false;
+    for (let i = 0; i < flashcardIndexes.length; i++) {
+      if (flashcardIndexes[i] !== revealedIndexes[i]) return false;
+    }
+    return revealedFlashcardIndexes.length === flashcards.length;
+  };
+
+  const handleToggleFlashcard = index => {
+    if (isFlashcardRevealed(index)) {
+      setRevealedFlashcardIndexes(prev => prev.filter(i => i !== index));
+    } else {
+      setRevealedFlashcardIndexes(prev => [...prev, index]);
+    }
+  };
+
+  const isFlashcardRevealed = index => {
+    return revealedFlashcardIndexes.includes(index);
   };
 
   return (
@@ -109,7 +136,11 @@ export default function FurnitureScreen() {
           <Text style={styles.heading}>Flashcards Framing</Text>
           <Pressable onPress={handleGlobalToggle} style={styles.eyeButton}>
             <Image
-              source={{ uri: iconsGui.eye }}
+              source={{
+                uri: areAllFlashcardsRevealed()
+                  ? iconsGui['eye-slash']
+                  : iconsGui.eye,
+              }}
               style={styles.eyeIcon}
               resizeMode="contain"
             />
@@ -137,7 +168,14 @@ export default function FurnitureScreen() {
             {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => {
               const flashcard = getFlashcardWithIndex(index);
               if (flashcard) {
-                return <FlashcardTile key={index} flashcard={flashcard} />;
+                return (
+                  <FlashcardTile
+                    key={index}
+                    flashcard={flashcard}
+                    hidden={!isFlashcardRevealed(index)}
+                    onToggle={() => handleToggleFlashcard(index)}
+                  />
+                );
               } else {
                 return <EmptyFlashcardTile key={index} />;
               }
