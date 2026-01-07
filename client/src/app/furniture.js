@@ -157,6 +157,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     padding: 16,
+    position: 'relative',
   },
   main: {
     width: '100%',

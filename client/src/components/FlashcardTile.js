@@ -1,12 +1,33 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { iconsFishcards } from '../utils/textures';
 
 export default function FlashcardTile({ flashcard }) {
   const [hidden, setHidden] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [front, setFront] = useState(flashcard.front);
+  const [back, setBack] = useState(flashcard.back);
 
-  const handleToggleQuestion = questionId => {
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    // TODO: send request to the backend when backend is ready
+    console.log(front);
+    console.log(back);
+    setIsEditing(false);
+  };
+
+  const handleToggleQuestion = () => {
     setHidden(prev => !prev);
   };
 
@@ -14,34 +35,68 @@ export default function FlashcardTile({ flashcard }) {
   const iconSource = { uri: iconsFishcards.user };
 
   return (
-    <Pressable
-      onPress={() => handleToggleQuestion(flashcard.id)}
-      style={[styles.tile, hidden ? styles.tileHidden : styles.tileRevealed]}
-    >
-      {hidden ? (
-        <Image
-          source={iconSource}
-          style={styles.hiddenIcon}
-          resizeMode="contain"
-        />
-      ) : (
-        <View style={styles.revealedContent}>
-          <Text style={styles.label}>Question:</Text>
-          <Text style={styles.questionText}>{flashcard.front}</Text>
-
-          <View style={styles.separator} />
-
-          <Text style={styles.label}>Answer:</Text>
-          <Text style={styles.answerText}>{flashcard.back}</Text>
-
-          <Image
-            source={iconSource}
-            style={styles.watermark}
-            resizeMode="contain"
+    <View style={styles.tile}>
+      {isEditing ? (
+        <View style={styles.editForm}>
+          <TextInput />
+          <TextInput
+            style={styles.input}
+            value={front}
+            onChangeText={setFront}
+            placeholder="Question"
+            placeholderTextColor="#666"
+            multiline
           />
+          <TextInput
+            style={styles.input}
+            value={back}
+            onChangeText={setBack}
+            placeholder="Answer"
+            placeholderTextColor="#666"
+            multiline
+          />
+          <Pressable style={styles.actionButton} onPress={handleSave}>
+            Save
+          </Pressable>
         </View>
+      ) : (
+        <>
+          <View
+            style={[
+              styles.content,
+              hidden ? styles.hiddenContent : styles.revealedContent,
+            ]}
+          >
+            <Text style={styles.label}>Question:</Text>
+            <Text style={styles.questionText}>{flashcard.front}</Text>
+
+            <View style={styles.separator} />
+
+            <Text style={styles.label}>Answer:</Text>
+            <Text style={styles.answerText}>{flashcard.back}</Text>
+
+            <Image
+              source={iconSource}
+              style={styles.watermark}
+              resizeMode="contain"
+            />
+          </View>
+
+          <View style={styles.actionButtons}>
+            <Pressable
+              style={styles.actionButton}
+              onPress={handleToggleQuestion}
+            >
+              {hidden ? 'Show' : 'Hide'}
+            </Pressable>
+
+            <Pressable style={styles.actionButton} onPress={handleStartEdit}>
+              Edit
+            </Pressable>
+          </View>
+        </>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -54,12 +109,9 @@ const styles = StyleSheet.create({
     aspectRatio: 'squre',
     borderRadius: 16,
     overflow: 'hidden',
-  },
-  tileHidden: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 0,
+    border: '2px solid rgba(255, 255, 255, 0.2)',
+    padding: 12,
   },
   hiddenIcon: {
     width: 80,
@@ -67,15 +119,13 @@ const styles = StyleSheet.create({
     tintColor: '#000',
     opacity: 0.6,
   },
-  tileRevealed: {
-    backgroundColor: '#121212',
-    borderWidth: 2,
-    borderColor: '#fff',
-    padding: 12,
+  hiddenContent: {
+    opacity: 0,
   },
-  revealedContent: {
+  content: {
     flex: 1,
     justifyContent: 'center',
+    transition: 'opacity 0.3s ease-in-out',
   },
   label: {
     color: '#aaa',
@@ -106,5 +156,33 @@ const styles = StyleSheet.create({
     height: 60,
     opacity: 0.1,
     tintColor: '#fff',
+  },
+
+  actionButtons: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    color: 'white',
+    padding: 4,
+    textAlign: 'center',
+    backgroundColor: 'black',
+    borderRadius: 4,
+    flex: 1,
+  },
+
+  editForm: {
+    gap: 8,
+  },
+
+  input: {
+    backgroundColor: 'white',
+    borderRadius: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
+    resizeMode: 'none',
   },
 });
