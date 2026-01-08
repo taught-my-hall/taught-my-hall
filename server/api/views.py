@@ -3,6 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+import json
+from django.db import transaction
+from rest_framework import status
 
 from django.utils import timezone
 
@@ -40,6 +43,95 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
         # always set user to request.user
         serializer.save(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        name = serializer.validated_data.get("name")
+        matrix = serializer.validated_data.get("palace_matrix")
+
+        with transaction.atomic():
+            palace = UserPalace.objects.create(
+                user=request.user,
+                name=name
+            )
+
+            if matrix is not None:
+                for r, row in enumerate(matrix):
+                    for c, cell in enumerate(row):
+                        if cell is None:
+                            continue
+
+                        if isinstance(cell, dict) and "furniture_id" in cell:
+                            continue
+
+                        if isinstance(cell, dict) and "name" in cell:
+                            furniture = Furniture.objects.create(
+                                user=request.user,
+                                palace=palace,
+                                name=cell["name"],
+                                description=cell.get("description", "")
+                            )
+                            matrix[r][c] = {"furniture_id": furniture.id}
+                        else:
+                            matrix[r][c] = None
+
+            if matrix is not None:
+                palace.palace_matrix = json.dumps(matrix)
+                palace.save(update_fields=["palace_matrix"])
+
+
+        output = self.get_serializer(palace)
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+
+    def update(self, request, *args, **kwargs):
+        palace = self.get_object()  
+
+        serializer = self.get_serializer(palace, data=request.data)  
+        serializer.is_valid(raise_exception=True)
+
+        name = serializer.validated_data.get("name")
+        matrix = serializer.validated_data.get("palace_matrix")
+
+        if matrix is not None and not isinstance(matrix, list):
+            return Response({"error": "palace_matrix must be a 2D array"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            palace.name = name
+
+            if matrix is not None:
+                for r, row in enumerate(matrix):
+                    for c, cell in enumerate(row):
+                        if cell is None:
+                            continue
+
+                        # existing furniture
+                        if isinstance(cell, dict) and cell.get("furniture_id"):
+                            continue
+
+                        # new furniture
+                        if isinstance(cell, dict) and cell.get("name"):
+                            furniture = Furniture.objects.create(
+                                user=request.user,
+                                palace=palace,
+                                name=cell["name"],
+                                description=cell.get("description", "")
+                            )
+                            matrix[r][c] = {"furniture_id": furniture.id}
+                        else:
+                            matrix[r][c] = None
+
+                palace.palace_matrix = json.dumps(matrix)
+
+            palace.save()
+
+        output = self.get_serializer(palace)
+        return Response(output.data, status=status.HTTP_200_OK)
+
+
+
+
     @action(detail=True, methods=["get"])
     def furniture(self, request, pk=None):
         """
@@ -54,9 +146,6 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
 
         items = palace.furniture.all()
         return Response(FurnitureSerializer(items, many=True).data)
-
-
-
 
 
 class FurnitureViewSet(viewsets.ModelViewSet):
