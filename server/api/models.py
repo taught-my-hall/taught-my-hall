@@ -56,6 +56,7 @@ class Flashcard(models.Model):
 
     front = models.TextField()
     back = models.TextField()
+    icon_name = models.CharField(max_length=100, null=True, blank=True)
     interval = models.IntegerField(default=1)
     ease_factor = models.FloatField(default=2.5)
     repetition = models.IntegerField(default=0)
