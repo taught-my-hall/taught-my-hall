@@ -9,22 +9,17 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
 import useImage from 'use-image';
 
 import { apiClient } from '../../services/apiClient';
 import BackroomSegment from '../components/BackroomLines';
-import PalaceList from '../components/PalaceList';
-import Vignette from '../components/Vignette';
-import { setPalacesData } from '../utils/tempData';
+import { setPalacesData, setTempPalaceMatrix } from '../utils/tempData';
 import { textures } from '../utils/textures';
 
 export default function BackroomScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const svgWidth = width * 3;
-
-  const isNewPalaceOpen = useSharedValue(false);
 
   // 2. Initialize loading to true so we don't show the empty state prematurely
   const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +107,8 @@ export default function BackroomScreen() {
   };
 
   const openNewPalace = () => {
-    isNewPalaceOpen.value = true;
+    setTempPalaceMatrix(null);
+    router.navigate('/palace/create');
   };
 
   // 4. Show Loading Spinner while fetching
@@ -215,10 +211,6 @@ export default function BackroomScreen() {
       <Pressable onPress={openNewPalace} style={styles.reviewButton}>
         <Text style={styles.newPalaceText}>New Palace</Text>
       </Pressable>
-
-      <Vignette isOpened={isNewPalaceOpen}>
-        <PalaceList />
-      </Vignette>
     </View>
   );
 }
