@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator, // 1. Imported ActivityIndicator
   Animated,
   Pressable,
   StyleSheet,
@@ -25,6 +26,8 @@ export default function BackroomScreen() {
 
   const isNewPalaceOpen = useSharedValue(false);
 
+  // 2. Initialize loading to true so we don't show the empty state prematurely
+  const [isLoading, setIsLoading] = useState(true);
   const [palaces, setPalaces] = useState([]);
   const [pointer, setPointer] = useState(0);
   const [pointerBefore, setPointerBefore] = useState(0);
@@ -42,6 +45,9 @@ export default function BackroomScreen() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      // 3. Mark loading as finished regardless of success or failure
+      setIsLoading(false);
     }
   }, []);
 
@@ -69,6 +75,11 @@ export default function BackroomScreen() {
     wall: imageMap.wall1,
     ceil: imageMap.wall2,
     door: imageMap.wood1,
+  };
+
+  const emptyStateTextures = {
+    ...textureConfig,
+    door: null,
   };
 
   const pointedIndices = [pointer - 1, pointer, pointer + 1];
@@ -104,6 +115,16 @@ export default function BackroomScreen() {
     isNewPalaceOpen.value = true;
   };
 
+  // 4. Show Loading Spinner while fetching
+  // This prevents the "Create first room" door from flashing briefly
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Animated.View
@@ -118,35 +139,58 @@ export default function BackroomScreen() {
         ]}
       >
         <View style={{ width: svgWidth, height: height }}>
-          {pointedIndices.map((p, i) => {
-            if (p < 0 || p >= palaces.length) return null;
+          {palaces.length === 0 ? (
+            <View
+              style={{ position: 'absolute', top: 0, left: 0, width, height }}
+              pointerEvents="box-none"
+            >
+              <BackroomSegment
+                i={0}
+                p={0}
+                total={1}
+                title="Create first room!"
+                svgWidth={svgWidth}
+                images={emptyStateTextures}
+                onPress={openNewPalace}
+              />
+            </View>
+          ) : (
+            pointedIndices.map((p, i) => {
+              if (p < 0 || p >= palaces.length) return null;
 
-            const currentPalace = palaces[p];
+              const currentPalace = palaces[p];
 
-            return (
-              <View
-                key={`palace-wrapper-${currentPalace.id || p}`}
-                style={{ position: 'absolute', top: 0, left: 0, width, height }}
-                pointerEvents="box-none"
-              >
-                <BackroomSegment
-                  i={i - 1}
-                  p={p}
-                  total={palaces.length}
-                  title={currentPalace.name}
-                  svgWidth={svgWidth}
-                  images={textureConfig}
-                  onPress={() => {
-                    router.navigate(`/palace/${currentPalace.id}`);
+              return (
+                <View
+                  key={`palace-wrapper-${currentPalace.id || p}`}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width,
+                    height,
                   }}
-                />
-              </View>
-            );
-          })}
+                  pointerEvents="box-none"
+                >
+                  <BackroomSegment
+                    i={i - 1}
+                    p={p}
+                    total={palaces.length}
+                    title={currentPalace.name}
+                    svgWidth={svgWidth}
+                    images={textureConfig}
+                    onPress={() => {
+                      router.navigate(`/palace/${currentPalace.id}`);
+                    }}
+                  />
+                </View>
+              );
+            })
+          )}
         </View>
       </Animated.View>
 
-      {pointerBefore !== 0 && (
+      {palaces.length > 0 && pointerBefore !== 0 && (
         <Pressable
           style={[styles.button, styles.buttonLeft]}
           onPress={roomLeft}
@@ -156,6 +200,7 @@ export default function BackroomScreen() {
           </Text>
         </Pressable>
       )}
+
       {palaces.length > 0 && pointerBefore !== palaces.length - 1 && (
         <Pressable
           style={[styles.button, styles.buttonRight]}

@@ -15,15 +15,30 @@ export default function LoginScreen() {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
 
+  const [errorMessage, setErrorMessage] = useState('');
   const [loadingType, setLoadingType] = useState(null);
 
   const handleLogin = async () => {
+    setErrorMessage('');
+
+    if (!inputEmail.trim()) {
+      setErrorMessage('Please enter your email address.');
+      return;
+    }
+    if (!inputPassword) {
+      setErrorMessage('Please enter your password.');
+      return;
+    }
+
     setLoadingType('login');
     await executeLogin(inputEmail, inputPassword);
   };
 
   const handleDemoLogin = async () => {
+    setErrorMessage('');
     setLoadingType('demo');
+    setInputEmail('demo@example.com');
+    setInputPassword('pass1234');
     await executeLogin('demo@example.com', 'pass1234');
   };
 
@@ -39,6 +54,7 @@ export default function LoginScreen() {
       router.navigate('/backrooms');
     } catch (error) {
       console.error('Network or Login error:', error);
+      setErrorMessage('Login failed. Please check your credentials.');
     } finally {
       setLoadingType(null);
     }
@@ -49,13 +65,25 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <Text style={styles.heading}>TaughtMyHall</Text>
 
+        {errorMessage ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
         <View>
-          <Text style={styles.label}>Login</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
-            onChangeText={setInputEmail}
+            onChangeText={text => {
+              setInputEmail(text);
+              setErrorMessage('');
+            }}
             value={inputEmail}
-            autoCapitalize="none" // Good practice for emails
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder={'bob@example.com'}
+            placeholderTextColor={'gray'}
           />
         </View>
 
@@ -63,13 +91,16 @@ export default function LoginScreen() {
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
-            onChangeText={setInputPassword}
+            onChangeText={text => {
+              setInputPassword(text);
+              setErrorMessage('');
+            }}
             value={inputPassword}
             secureTextEntry
+            placeholder={'*******'}
+            placeholderTextColor={'gray'}
           />
         </View>
-
-        <Text style={styles.smallLink}>Forgot password?</Text>
 
         <Pressable
           style={styles.primaryButton}
@@ -120,9 +151,23 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 36,
-    fontWeight: '600', // Note: strings are safer for fontWeight in RN
+    fontWeight: '600',
     color: '#fff',
     marginBottom: 16,
+  },
+  // New styles for errors
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // Semi-transparent red
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  errorText: {
+    color: '#ffcccc',
+    fontWeight: '500',
+    textAlign: 'center',
   },
   label: {
     color: '#fff',
@@ -154,19 +199,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignSelf: 'center',
   },
-  // New style for the main Login button
   primaryButton: {
-    backgroundColor: '#2196F3', // Standard Blue
+    backgroundColor: '#2196F3',
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-    borderRadius: 4, // Optional: makes it look nicer
+    borderRadius: 4,
   },
   primaryButtonText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 16, // Match standard button size
+    fontSize: 16,
   },
   demoButton: {
     backgroundColor: '#000',
