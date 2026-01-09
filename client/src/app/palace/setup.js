@@ -30,9 +30,9 @@ import useImage from 'use-image';
 import { apiClient } from '../../../services/apiClient';
 
 import Furniture from '../../components/Furniture';
+import FurnitureScreen from '../../components/FurnitureScreen';
 import PalaceTile from '../../components/palaceTile';
 import Vignette from '../../components/Vignette';
-import FurnitureScreen from '../furniture';
 
 import { FURNITURE_MAP } from '../../utils/furnitureMap';
 import {

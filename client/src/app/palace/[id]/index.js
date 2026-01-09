@@ -20,11 +20,11 @@ import Animated, {
 import useImage from 'use-image';
 import { apiClient } from '../../../../services/apiClient';
 import AppMenu from '../../../components/AppMenu';
+import FurnitureScreen from '../../../components/FurnitureScreen';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
 import { getPalacesData, setTempPalaceMatrix } from '../../../utils/tempData';
 import { textures } from '../../../utils/textures';
-import FurnitureScreen from '../../furniture';
 
 const TILE_SIZE = 100;
 const WHEEL_SENSITIVITY = 0.005;

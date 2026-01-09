@@ -7,9 +7,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import EmptyFlashcardTile from '../components/EmptyFlashcardTile';
-import FlashcardTile from '../components/FlashcardTile';
 import { iconsGui } from '../utils/textures';
+import EmptyFlashcardTile from './EmptyFlashcardTile';
+import FlashcardTile from './FlashcardTile';
 
 export default function FurnitureScreen() {
   const [flashcards, setFlashcards] = useState([]);
