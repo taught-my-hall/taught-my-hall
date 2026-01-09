@@ -566,7 +566,7 @@ export default function PalaceSetupScreen() {
       </Pressable>
 
       <Vignette isOpened={isFurnitureOpen}>
-        <FurnitureScreen />
+        <FurnitureScreen furnitureId={selectedFurniture.id} />
       </Vignette>
     </GestureHandlerRootView>
   );

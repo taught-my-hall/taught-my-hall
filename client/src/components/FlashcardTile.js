@@ -14,16 +14,26 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
   const [isEditing, setIsEditing] = useState(false);
   const [front, setFront] = useState(flashcard.front);
   const [back, setBack] = useState(flashcard.back);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
-  };
+  const handleSave = async () => {
+    setIsLoading(true);
+    setError('');
 
-  const handleSave = () => {
-    // TODO: send request to the backend when backend is ready
-    console.log(front);
-    console.log(back);
-    setIsEditing(false);
+    try {
+      // TODO: when backend implements it
+      // const res = await apiClient(`/api/flashcards/${flashcard.id}`, {
+      //   method: 'PUT',
+      // });
+      setIsEditing(false);
+    } catch {
+      setError(
+        'Something went wrong when updating flashcard, please try again'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // TODO: flashcards should have their own icons saved in the database
@@ -50,9 +60,18 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             placeholderTextColor="#666"
             multiline
           />
-          <Pressable style={styles.actionButton} onPress={handleSave}>
-            <Text>Show</Text>
-          </Pressable>
+
+          <View style={styles.actionButtons}>
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => setIsEditing(false)}
+            >
+              <Text style={styles.actionButtonText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.actionButton} onPress={handleSave}>
+              <Text style={styles.actionButtonText}>Save</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
         <>
@@ -79,11 +98,16 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
 
           <View style={styles.actionButtons}>
             <Pressable style={styles.actionButton} onPress={onToggle}>
-              <Text>{hidden ? 'Show' : 'Hide'}</Text>
+              <Text style={styles.actionButtonText}>
+                {hidden ? 'Show' : 'Hide'}
+              </Text>
             </Pressable>
 
-            <Pressable style={styles.actionButton} onPress={handleStartEdit}>
-              <Text>Edit</Text>
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => setIsEditing(true)}
+            >
+              <Text style={styles.actionButtonText}>Edit</Text>
             </Pressable>
           </View>
         </>
@@ -156,17 +180,22 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     gap: 8,
+    marginTop: 'auto',
   },
   actionButton: {
-    color: 'white',
     padding: 4,
-    textAlign: 'center',
     backgroundColor: 'black',
     borderRadius: 4,
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: 'white',
   },
 
   editForm: {
+    flex: 1,
     gap: 8,
   },
 
