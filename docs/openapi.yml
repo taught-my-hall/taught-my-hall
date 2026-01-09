@@ -7,6 +7,8 @@ info:
 servers:
   - description: Development
     url: http://127.0.0.1:8000/api
+  - description: Production
+    url: https://palace-server-965384144322.europe-west3.run.app/api 
 
 tags:
   - name: Authentication
@@ -387,6 +389,13 @@ paths:
           $ref: "#/components/responses/NotFoundError"
 
   /palace/{palaceId}/flashcards:
+    parameters:
+      - name: palaceId
+        in: path
+        required: true
+        schema:
+          type: integer
+
     get:
       summary: Lists all user's flashcards from palace. Used to palace review
       tags:
@@ -551,7 +560,7 @@ paths:
         schema:
           type: integer
 
-    put:
+    post:
       summary: Updates flashcard ease level using knowledge retention algorithm
       tags:
         - Flashcards
@@ -666,6 +675,7 @@ components:
         - repetition
         - next_review
         - furniture_slot_index
+        - icon_name
         - created_at
         - updated_at
       properties:
@@ -703,6 +713,10 @@ components:
           minimum: 0
           maximum: 8
           example: 3
+        icon_name:
+          description: Name of the icon displayed next to the flashcard. Icons are hardcoded on the client
+          type: string
+          example: sunset
         created_at:
           type: string
           format: date-time
