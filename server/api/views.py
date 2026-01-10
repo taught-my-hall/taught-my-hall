@@ -146,6 +146,31 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
 
         items = palace.furniture.all()
         return Response(FurnitureSerializer(items, many=True).data)
+    
+    @action(detail=True, methods=["get"], url_path="flashcards")
+    def flashcards(self, request, pk=None):
+        """
+        GET /palaces/<id>/flashcards/?onlyInReview=true|false
+
+        Returns all user's flashcards from given palace.
+        If onlyInReview=true -> returns only cards due for review (next_review <= now).
+        """
+        palace = self.get_object()
+
+        only_in_review = request.query_params.get("onlyInReview", "false").lower() == "true"
+        now = timezone.now()
+
+        qs = Flashcard.objects.filter(
+            user=request.user,
+            furniture__palace=palace,
+        )
+        
+        if only_in_review:
+            qs = qs.filter(next_review__lte=now)
+
+        qs = qs.order_by("next_review", "id")
+
+        return Response(FlashcardSerializer(qs, many=True).data, status=status.HTTP_200_OK)
 
 
 class FurnitureViewSet(viewsets.ModelViewSet):
@@ -180,14 +205,17 @@ class FurnitureViewSet(viewsets.ModelViewSet):
         return Furniture.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        # Force user = request.user so no one can create furniture for someone else
-        serializer.save(user=self.request.user)
-   
+        furniture = self.get_object()   # furnitureId z URL
+        serializer.save(
+            furniture=furniture,
+            user=self.request.user
+        )
 
-    @action(detail=True, methods=["post"])
+
+    @action(detail=True, methods=["post"], url_path="flashcards")
     def add_flashcard(self, request, pk=None):
         """
-        POST /furniture/<id>/add_flashcard/
+        POST /furniture/<id>/flashcard/
         Adds flashcard ONLY if furniture belongs to request.user
         """
         furniture = self.get_object()
@@ -242,8 +270,10 @@ class FlashcardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Only return flashcards belonging to the logged-in user
-        return Flashcard.objects.filter(user=self.request.user)
+        # Return only flashcards owned by the authenticated user,
+        # ordered by next scheduled review (earliest first)   
+        return Flashcard.objects.filter(user=self.request.user).order_by("next_review", "id")
+
 
     def perform_create(self, serializer):
         # Automatically assign user to flashcard
@@ -317,6 +347,6 @@ class FlashcardViewSet(viewsets.ModelViewSet):
         if furniture_id:
             cards = cards.filter(furniture_id=furniture_id)
 
-        due_cards = cards.filter(next_review__lte=now)
+        due_cards = cards.filter(next_review__lte=now).order_by("next_review", "id")
 
         return Response(FlashcardSerializer(due_cards, many=True).data)
