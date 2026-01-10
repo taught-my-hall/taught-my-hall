@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -57,6 +58,13 @@ class Flashcard(models.Model):
     front = models.TextField()
     back = models.TextField()
     icon_name = models.CharField(max_length=100, null=True, blank=True)
+
+    furniture_slot_index = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(8)]
+    )
+
     interval = models.IntegerField(default=1)
     ease_factor = models.FloatField(default=2.5)
     repetition = models.IntegerField(default=0)
@@ -64,6 +72,15 @@ class Flashcard(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["furniture", "furniture_slot_index"],
+                name="unique_flashcard_slot_per_furniture"
+            )
+        ]
 
     def __str__(self):
         return f"{self.front[:30]}..."

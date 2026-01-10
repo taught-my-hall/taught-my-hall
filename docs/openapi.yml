@@ -80,7 +80,7 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /auth/login:
+  /auth/login/:
     post:
       summary: Log in to your account
       tags:
@@ -388,7 +388,7 @@ paths:
         '404':
           $ref: "#/components/responses/NotFoundError"
 
-  /palace/{palaceId}/flashcards:
+  /palaces/{palaceId}/flashcards:
     parameters:
       - name: palaceId
         in: path
@@ -420,7 +420,7 @@ paths:
         '401':
           $ref: "#/components/responses/UnauthorizedError"
 
-  /furniture/{furnitureId}/flashcards:
+  /furniture/{furnitureId}/flashcards/:
     parameters:
       - name: furnitureId
         in: path
@@ -483,7 +483,7 @@ paths:
         '422':
           $ref: "#/components/responses/ValidationFailedError"
 
-  /flashcards/{flashcardId}:
+  /flashcards/{flashcardId}/:
     parameters:
       - name: flashcardId
         in: path

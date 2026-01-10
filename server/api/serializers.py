@@ -3,15 +3,42 @@ from .models import UserPalace, PalaceTemplate, Furniture, Flashcard
 import json
 
 
-
 class FlashcardSerializer(serializers.ModelSerializer):
+    furniture = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Flashcard
         fields = [
-            "id", "user", "furniture", "front", "back", "icon_name", "interval", "ease_factor",
-            "repetition", "next_review", "created_at", "updated_at"
+            "id",
+            "user",
+            "furniture",
+            "front",
+            "back",
+            "icon_name",
+            "furniture_slot_index",
+            "interval",
+            "ease_factor",
+            "repetition",
+            "next_review",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at", "user")
+
+    def validate(self, attrs):
+        """
+        furniture can have max 9 flashcards
+        """
+        furniture = attrs.get("furniture") or getattr(self.instance, "furniture", None)
+
+        # only in CREATE
+        if self.instance is None and furniture:
+            count = Flashcard.objects.filter(furniture=furniture).count()
+            if count >= 9:
+                raise serializers.ValidationError(
+                    "Furniture can have at most 9 flashcards."
+                )
+
+        return attrs
 
 
 class FurnitureSerializer(serializers.ModelSerializer):
