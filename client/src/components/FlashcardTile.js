@@ -85,19 +85,21 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
         </View>
       ) : (
         <>
-          <View
-            style={[
-              styles.content,
-              hidden ? styles.hiddenContent : styles.revealedContent,
-            ]}
-          >
+          <View style={styles.content}>
             <Text style={styles.label}>Question:</Text>
             <Text style={styles.questionText}>{renderedFlashcard.front}</Text>
 
             <View style={styles.separator} />
 
-            <Text style={styles.label}>Answer:</Text>
-            <Text style={styles.answerText}>{renderedFlashcard.back}</Text>
+            <View
+              style={[
+                styles.answerSection,
+                hidden ? styles.hiddenContent : styles.revealedContent,
+              ]}
+            >
+              <Text style={styles.label}>Answer:</Text>
+              <Text style={styles.answerText}>{renderedFlashcard.back}</Text>
+            </View>
 
             <Image
               source={iconSource}
@@ -153,6 +155,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
+    transition: 'opacity 0.3s ease-in-out',
+  },
+  answerSection: {
     transition: 'opacity 0.3s ease-in-out',
   },
   label: {
