@@ -492,7 +492,7 @@ function PalaceScreen() {
         </Animated.View>
       </GestureDetector>
       <Pressable
-        onPress={() => router.navigate('/room/TODO/review')}
+        onPress={() => router.navigate(`/palace/${currentPalace.id}/review`)}
         style={style.reviewButton}
       >
         <Text style={style.reviewButtonText}>Review</Text>
