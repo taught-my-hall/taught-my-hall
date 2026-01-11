@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Pressable,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { apiClient } from '../../services/apiClient';
 import { iconsFishcards } from '../utils/textures';
 
 export default function FlashcardTile({ flashcard, onToggle, hidden }) {
@@ -15,20 +17,27 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
   const [front, setFront] = useState(flashcard.front);
   const [back, setBack] = useState(flashcard.back);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [renderedFlashcard, setRenderedFlashcard] = useState(flashcard);
 
   const handleSave = async () => {
     setIsLoading(true);
-    setError('');
 
     try {
-      // TODO: when backend implements it
-      // const res = await apiClient(`/api/flashcards/${flashcard.id}`, {
-      //   method: 'PUT',
-      // });
+      const res = await apiClient(`/api/flashcards/${flashcard.id}`, {
+        method: 'PUT',
+        body: {
+          front,
+          back,
+          furniture_slot_index: flashcard.furniture_slot_index,
+        },
+      });
+      setFront(res.front);
+      setBack(res.back);
+      setRenderedFlashcard(res);
       setIsEditing(false);
     } catch {
-      setError(
+      // Assume there won't be any errors (no time)
+      console.error(
         'Something went wrong when updating flashcard, please try again'
       );
     } finally {
@@ -70,6 +79,7 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             </Pressable>
             <Pressable style={styles.actionButton} onPress={handleSave}>
               <Text style={styles.actionButtonText}>Save</Text>
+              {isLoading && <ActivityIndicator color="white" size={12} />}
             </Pressable>
           </View>
         </View>
@@ -82,12 +92,12 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             ]}
           >
             <Text style={styles.label}>Question:</Text>
-            <Text style={styles.questionText}>{flashcard.front}</Text>
+            <Text style={styles.questionText}>{renderedFlashcard.front}</Text>
 
             <View style={styles.separator} />
 
             <Text style={styles.label}>Answer:</Text>
-            <Text style={styles.answerText}>{flashcard.back}</Text>
+            <Text style={styles.answerText}>{renderedFlashcard.back}</Text>
 
             <Image
               source={iconSource}
@@ -189,6 +199,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
   },
   actionButtonText: {
     color: 'white',

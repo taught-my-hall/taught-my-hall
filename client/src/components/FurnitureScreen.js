@@ -19,20 +19,19 @@ const FurnitureScreen = ({ furnitureId }) => {
   const [error, setError] = useState('');
   const [revealedFlashcardIndexes, setRevealedFlashcardIndexes] = useState([]);
 
-  // TODO: real flashcards fetch when backend implements it
   const refetchFurnitureFlashcards = useCallback(async id => {
     setIsLoading(true);
     setError('');
 
     try {
-      const flashcardsList = await apiClient(`/api/furniture/${id}/flashcards`);
+      // Very bad to filter on the client but there was a time rush for the demo
+      const flashcardsList = await apiClient(`/api/flashcards/`, {
+        method: 'GET',
+      });
 
-      // TODO: server should implement furniture_slot_index
-      setFlashcards(
-        flashcardsList
-          .slice(0, 9)
-          .map((f, i) => ({ ...f, furniture_slot_index: i }))
-      );
+      const filtered = flashcardsList.filter(f => f.furniture === id);
+
+      setFlashcards(filtered);
       setIsLoading(false);
       setError('');
     } catch {
@@ -110,7 +109,7 @@ const FurnitureScreen = ({ furnitureId }) => {
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
               style={styles.retryBtn}
-              onPress={refetchFurnitureFlashcards}
+              onPress={() => refetchFurnitureFlashcards(furnitureId)}
             >
               <Text style={styles.retryText}>Try again</Text>
             </Pressable>
