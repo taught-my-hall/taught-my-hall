@@ -1,8 +1,8 @@
+import re
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-
 import json
 from django.db import transaction
 from rest_framework import status
@@ -12,6 +12,42 @@ from django.utils import timezone
 from .models import UserPalace, PalaceTemplate, Furniture, Flashcard
 from .serializers import UserPalaceSerializer, FurnitureSerializer, FlashcardSerializer
 from .services.spaced_repetition import apply_sm2
+
+CELL_RE = re.compile(r"^(?P<room>\d+?)_(?P<payload>[^_]+?)_$")
+
+def normalize_frontend_cell(cell: str, *, user, palace):
+    if cell is None:
+        return None
+
+    if not isinstance(cell, str):
+        return None
+
+    s = cell.strip()
+
+    # tiles like "1_" "0_" "2_"
+    if re.fullmatch(r"\d+_", s):
+        return s
+
+    m = CELL_RE.match(s)
+    if not m:
+        return None
+
+    room = m.group("room")
+    payload = m.group("payload")
+
+    # already "room_<id>_"
+    if payload.isdigit():
+        return f"{room}_{payload}_"
+
+    # "room_<name>_" -> create furniture and return "room_<newId>_"
+    furniture = Furniture.objects.create(
+        user=user,
+        palace=palace,        
+        name=payload,
+        description="",
+    )
+    return f"{room}_{furniture.id}_"
+
 
 
 class UserPalaceViewSet(viewsets.ModelViewSet):
@@ -59,22 +95,11 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
             if matrix is not None:
                 for r, row in enumerate(matrix):
                     for c, cell in enumerate(row):
-                        if cell is None:
-                            continue
-
-                        if isinstance(cell, dict) and "furniture_id" in cell:
-                            continue
-
-                        if isinstance(cell, dict) and "name" in cell:
-                            furniture = Furniture.objects.create(
-                                user=request.user,
-                                palace=palace,
-                                name=cell["name"],
-                                description=cell.get("description", "")
-                            )
-                            matrix[r][c] = {"furniture_id": furniture.id}
-                        else:
-                            matrix[r][c] = None
+                        matrix[r][c] = normalize_frontend_cell(
+                            cell,
+                            user=request.user,
+                            palace=palace
+                        )
 
             if matrix is not None:
                 palace.palace_matrix = json.dumps(matrix)
@@ -98,31 +123,21 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
             return Response({"error": "palace_matrix must be a 2D array"}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            palace.name = name
+            if name is not None:
+                palace.name = name
+
 
             if matrix is not None:
                 for r, row in enumerate(matrix):
                     for c, cell in enumerate(row):
-                        if cell is None:
-                            continue
-
-                        # existing furniture
-                        if isinstance(cell, dict) and cell.get("furniture_id"):
-                            continue
-
-                        # new furniture
-                        if isinstance(cell, dict) and cell.get("name"):
-                            furniture = Furniture.objects.create(
-                                user=request.user,
-                                palace=palace,
-                                name=cell["name"],
-                                description=cell.get("description", "")
-                            )
-                            matrix[r][c] = {"furniture_id": furniture.id}
-                        else:
-                            matrix[r][c] = None
+                        matrix[r][c] = normalize_frontend_cell(
+                            cell,
+                            user=request.user,
+                            palace=palace
+                        )
 
                 palace.palace_matrix = json.dumps(matrix)
+
 
             palace.save()
 
