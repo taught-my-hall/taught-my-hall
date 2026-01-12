@@ -6,7 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useWindowDimensions, // Implemented usage
+  useWindowDimensions,
 } from 'react-native';
 import {
   Gesture,
@@ -22,11 +22,7 @@ import { apiClient } from '../../../../services/apiClient';
 import AppMenu from '../../../components/AppMenu';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
-import {
-  getPalacesData,
-  setTempPalaceMatrix,
-  setTempPalaceRoute,
-} from '../../../utils/tempData';
+import { getPalacesData, setTempPalaceMatrix } from '../../../utils/tempData';
 import { textures } from '../../../utils/textures';
 import FurnitureScreen from '../../furniture';
 
@@ -46,17 +42,10 @@ const clampValues = (val, currentScale, mapSize, screenSize) => {
 function PalaceScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-
-  // 1. Get Dynamic Screen Dimensions
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
-  const [currentPalace, setCurrentPalace] = useState(() => {
-    const allPalaces = getPalacesData();
-    if (Array.isArray(allPalaces)) {
-      return allPalaces.find(p => String(p.id) === String(id)) || null;
-    }
-    return null;
-  });
+  const [currentPalace, setCurrentPalace] = useState(null);
+  const [activeFurniture, setActiveFurniture] = useState(null);
 
   const pathname = usePathname();
   const scale = useSharedValue(1);
@@ -85,13 +74,40 @@ function PalaceScreen() {
     [imgStone, imgPlanks, imgBrick, furnitureSheet]
   );
 
+  const furnitureMap = useMemo(() => {
+    if (!currentPalace || !currentPalace.furniture) return {};
+    return currentPalace.furniture.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [currentPalace]);
+
   const mapData = useMemo(() => {
     if (!currentPalace || !currentPalace.palace_matrix) {
       return { grid: [], width: 0, height: 0, pixelWidth: 0, pixelHeight: 0 };
     }
 
     const rawMap = currentPalace.palace_matrix;
-    const grid = rawMap.map(row => row.map(cell => cell.split('_')));
+    const grid = rawMap.map(row =>
+      row.map(cell => {
+        if (!cell) return ['0', '', ''];
+
+        const parts = cell.split('_');
+        const floor = parts[0];
+        const content = parts[1];
+
+        if (content && !isNaN(content)) {
+          const furnitureId = parseInt(content, 10);
+          const furnitureData = furnitureMap[furnitureId];
+          if (furnitureData) {
+            return [floor, furnitureData.name, '', furnitureId];
+          }
+        }
+
+        return parts;
+      })
+    );
+
     const height = grid.length;
     const width = grid[0]?.length || 0;
 
@@ -102,22 +118,21 @@ function PalaceScreen() {
       pixelWidth: width * TILE_SIZE,
       pixelHeight: height * TILE_SIZE,
     };
-  }, [currentPalace]);
+  }, [currentPalace, furnitureMap]);
 
-  // 2. Fix Clamping Logic to use mapData and dynamic screenWidth/Height
   useEffect(() => {
-    if (mapData.pixelWidth === 0) return; // Prevent run if data not ready
+    if (mapData.pixelWidth === 0) return;
 
     translateX.value = clampValues(
       translateX.value,
       scale.value,
-      mapData.pixelWidth, // Fixed: Was MAP_PIXEL_WIDTH
+      mapData.pixelWidth,
       screenWidth
     );
     translateY.value = clampValues(
       translateY.value,
       scale.value,
-      mapData.pixelHeight, // Fixed: Was MAP_PIXEL_HEIGHT
+      mapData.pixelHeight,
       screenHeight
     );
     savedTranslateX.value = translateX.value;
@@ -130,7 +145,7 @@ function PalaceScreen() {
     translateY,
     savedTranslateX,
     savedTranslateY,
-    mapData, // Added dependency
+    mapData,
   ]);
 
   const processedTiles = useMemo(() => {
@@ -248,8 +263,8 @@ function PalaceScreen() {
       isFurnitureOpen,
       scale,
       mapData,
-      screenWidth, // Added dep
-      screenHeight, // Added dep
+      screenWidth,
+      screenHeight,
     ]
   );
 
@@ -266,13 +281,13 @@ function PalaceScreen() {
             translateX.value,
             newScale,
             mapData.pixelWidth,
-            screenWidth // Fixed
+            screenWidth
           );
           translateY.value = clampValues(
             translateY.value,
             newScale,
             mapData.pixelHeight,
-            screenHeight // Fixed
+            screenHeight
           );
         })
         .onEnd(() => {
@@ -288,8 +303,8 @@ function PalaceScreen() {
       savedTranslateX,
       savedTranslateY,
       mapData,
-      screenWidth, // Added dep
-      screenHeight, // Added dep
+      screenWidth,
+      screenHeight,
     ]
   );
 
@@ -309,7 +324,6 @@ function PalaceScreen() {
       const oldTranslateX = translateX.value;
       const oldTranslateY = translateY.value;
 
-      // 3. Use dynamic screen dimensions in Wheel Logic
       const screenCenterX = screenWidth / 2;
       const screenCenterY = screenHeight / 2;
       const ROOM_CENTER_X = mapData.pixelWidth / 2;
@@ -329,13 +343,15 @@ function PalaceScreen() {
         const isValidGrid =
           col >= 0 && col < mapData.width && row >= 0 && row < mapData.height;
 
-        const hasFurniture = isValidGrid && mapData.grid[row][col][1] !== '';
+        const tileData = isValidGrid ? mapData.grid[row][col] : null;
+        const hasFurniture = tileData && tileData[1] !== '';
 
         if (isValidGrid) {
           zoomTargetRef.current = {
             type: hasFurniture ? 'furniture' : 'floor',
             roomX: col * TILE_SIZE + TILE_SIZE / 2,
             roomY: row * TILE_SIZE + TILE_SIZE / 2,
+            furnitureId: hasFurniture ? tileData[3] : null,
           };
         } else {
           zoomTargetRef.current = {
@@ -369,15 +385,21 @@ function PalaceScreen() {
           isFurnitureOpen.value = true;
           desiredScreenX = screenCenterX;
           desiredScreenY = screenCenterY;
+
+          if (target.furnitureId && furnitureMap[target.furnitureId]) {
+            setActiveFurniture(furnitureMap[target.furnitureId]);
+          }
         } else {
           isFurnitureOpen.value = false;
           const diffX = screenCenterX - currentScreenX;
           const diffY = screenCenterY - currentScreenY;
           desiredScreenX += diffX * BASE_CENTERING_SPEED;
           desiredScreenY += diffY * BASE_CENTERING_SPEED;
+          setActiveFurniture(null);
         }
       } else {
         isFurnitureOpen.value = false;
+        setActiveFurniture(null);
 
         if (target.type === 'floor') {
           const diffX = screenCenterX - currentScreenX;
@@ -403,13 +425,13 @@ function PalaceScreen() {
         newTranslateX,
         newScale,
         mapData.pixelWidth,
-        screenWidth // Fixed
+        screenWidth
       );
       translateY.value = clampValues(
         newTranslateY,
         newScale,
         mapData.pixelHeight,
-        screenHeight // Fixed
+        screenHeight
       );
 
       savedTranslateX.value = translateX.value;
@@ -428,8 +450,9 @@ function PalaceScreen() {
       savedTranslateY,
       isFurnitureOpen,
       mapData,
-      screenWidth, // Added dep
-      screenHeight, // Added dep
+      screenWidth,
+      screenHeight,
+      furnitureMap,
     ]
   );
 
@@ -456,10 +479,18 @@ function PalaceScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!currentPalace) {
+    const cachedPalaces = getPalacesData();
+    if (Array.isArray(cachedPalaces)) {
+      const found = cachedPalaces[id];
+      if (found) {
+        setCurrentPalace(found);
+      } else {
+        fetchPalace();
+      }
+    } else {
       fetchPalace();
     }
-  }, [currentPalace, fetchPalace]);
+  }, [id, fetchPalace]);
 
   if (!currentPalace) {
     return null;
@@ -503,7 +534,6 @@ function PalaceScreen() {
             'Edit',
             () => {
               setTempPalaceMatrix(currentPalace.palace_matrix);
-              setTempPalaceRoute(pathname);
               router.navigate('/palace/create');
             },
           ],
@@ -516,7 +546,7 @@ function PalaceScreen() {
         ]}
       />
       <Vignette isOpened={isFurnitureOpen}>
-        <FurnitureScreen />
+        <FurnitureScreen data={activeFurniture} />
       </Vignette>
     </GestureHandlerRootView>
   );

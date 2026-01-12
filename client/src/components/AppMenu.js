@@ -15,8 +15,6 @@ export default function AppMenu({ buttons = [] }) {
     router.navigate('/login');
   };
 
-  console.log(buttons);
-
   return (
     <>
       <Pressable onPress={openHideMenu} style={styles.menuButton}>

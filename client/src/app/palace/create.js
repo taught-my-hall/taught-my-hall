@@ -212,10 +212,10 @@ export default function PalaceCreatorScreen() {
     }
   }, []);
 
-  useInterval(() => {
-    console.log('Autosave');
-    setTempPalaceMatrix(getGridMatrix());
-  }, 5000);
+  // useInterval(() => {
+  //   console.log('Autosave');
+  //   setTempPalaceMatrix(getGridMatrix());
+  // }, 5000);
 
   // --- Notification Helper ---
   const showNotification = message => {

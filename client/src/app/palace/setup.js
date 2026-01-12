@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
+  ActivityIndicator,
+  Alert,
   Platform,
   Pressable,
   StyleSheet,
@@ -25,6 +27,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import useImage from 'use-image';
 
+import { apiClient } from '../../../services/apiClient';
+
 import Furniture from '../../components/Furniture';
 import PalaceTile from '../../components/palaceTile';
 import Vignette from '../../components/Vignette';
@@ -32,9 +36,11 @@ import FurnitureScreen from '../furniture';
 
 import { FURNITURE_MAP } from '../../utils/furnitureMap';
 import {
+  getPalacesData,
+  getTempPalaceId,
   getTempPalaceMatrix,
-  getTempPalaceRoute,
   setTempPalaceMatrix,
+  updatePalaceInCache,
 } from '../../utils/tempData';
 import { textures } from '../../utils/textures';
 
@@ -53,10 +59,58 @@ export default function PalaceSetupScreen() {
   const router = useRouter();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
 
-  const [matrix, setMatrix] = useState(() => getTempPalaceMatrix());
+  // 2. --- ZMIANA: Tłumaczenie ID na Nazwy przy inicjalizacji ---
+  const [matrix, setMatrix] = useState(() => {
+    const rawMatrix = getTempPalaceMatrix();
+    const palaceId = getTempPalaceId();
+
+    // Jeśli nie ma ID (nowy pałac), zwracamy czystą macierz
+    if (!palaceId) return rawMatrix;
+
+    // Pobieramy dane pałacu, żeby dostać listę furniture
+    const allPalaces = getPalacesData();
+    const currentPalace = allPalaces.find(
+      p => String(p.id) === String(palaceId)
+    );
+
+    // Jeśli nie znaleziono pałacu lub mebli, nic nie robimy
+    if (!currentPalace || !currentPalace.furniture) return rawMatrix;
+
+    // Tworzymy mapę: ID -> NAZWA (np. 15 -> 'bedGreen')
+    const idToNameMap = {};
+    currentPalace.furniture.forEach(item => {
+      idToNameMap[item.id] = item.name;
+    });
+
+    // Przelatujemy przez macierz i podmieniamy ID na nazwy
+    return rawMatrix.map(row =>
+      row.map(cell => {
+        if (!cell || typeof cell !== 'string') return cell;
+
+        const parts = cell.split('_');
+        // parts[0] = tło (np. "1"), parts[1] = mebel (np. "15" lub "bedGreen")
+        const furniturePart = parts[1];
+
+        // Sprawdzamy czy to liczba (ID) i czy mamy jej nazwę
+        if (
+          furniturePart &&
+          !isNaN(furniturePart) &&
+          idToNameMap[furniturePart]
+        ) {
+          parts[1] = idToNameMap[furniturePart];
+          // Zwracamy zrekonstruowany string: "1_bedGreen_"
+          return parts.join('_') + (cell.endsWith('_') ? '' : '_');
+        }
+
+        return cell;
+      })
+    );
+  });
+
   const [selectedFurniture, setSelectedFurniture] = useState(null);
 
-  // Gesty mapy
+  const [isSaving, setIsSaving] = useState(false);
+
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -65,9 +119,8 @@ export default function PalaceSetupScreen() {
   const savedTranslateY = useSharedValue(0);
   const isFurnitureOpen = useSharedValue(false);
 
-  // Gesty listy (scroll)
   const listScrollY = useSharedValue(0);
-  const startScrollY = useSharedValue(0); // NOWE: Zastępuje ctx.startScrollY
+  const startScrollY = useSharedValue(0);
   const isDraggingScroll = useSharedValue(false);
 
   const [listHeight, setListHeight] = useState(0);
@@ -230,7 +283,6 @@ export default function PalaceSetupScreen() {
     return () => cancelAnimationFrame(cacheHandle);
   }, [processedTiles, imageMap, MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT]);
 
-  // --- Gesty Mapy ---
   const panGesture = Gesture.Pan()
     .minDistance(3)
     .averageTouches(true)
@@ -295,7 +347,6 @@ export default function PalaceSetupScreen() {
     Gesture.Simultaneous(panGesture, pinchGesture)
   );
 
-  // --- Gesty Listy (Scrollbar) ---
   const scrollHandler = useAnimatedScrollHandler(event => {
     if (!isDraggingScroll.value) {
       listScrollY.value = event.contentOffset.y;
@@ -306,7 +357,6 @@ export default function PalaceSetupScreen() {
     .averageTouches(true)
     .activateAfterLongPress(0)
     .onStart(() => {
-      // NAPRAWA: Używamy sharedValue zamiast contextu
       isDraggingScroll.value = true;
       startScrollY.value = listScrollY.value;
     })
@@ -321,14 +371,10 @@ export default function PalaceSetupScreen() {
       const maxIndicatorMove = visibleHeight - indicatorHeight;
 
       const multiplier = maxScroll / maxIndicatorMove;
-
-      // NAPRAWA: Bierzemy wartość z sharedValue
       const targetScrollY = startScrollY.value + e.translationY * multiplier;
-
       const clampedScrollY = Math.min(Math.max(targetScrollY, 0), maxScroll);
 
       listScrollY.value = clampedScrollY;
-
       scrollTo(scrollViewRef, 0, clampedScrollY, false);
     })
     .onEnd(() => {
@@ -372,12 +418,63 @@ export default function PalaceSetupScreen() {
     };
   });
 
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
+    try {
+      const palaceId = getTempPalaceId();
+      const hardcodedName = 'New Palace';
+
+      const apiMatrix = matrix.map(row =>
+        row.map(cell => {
+          if (!cell) return null;
+          if (typeof cell === 'string') {
+            if (cell.endsWith('__')) return cell.slice(0, -1);
+            if (!cell.endsWith('_')) return cell + '_';
+          }
+          return cell;
+        })
+      );
+
+      const payload = {
+        name: hardcodedName,
+        palace_matrix: apiMatrix,
+      };
+
+      let serverResponse;
+
+      if (palaceId) {
+        serverResponse = await apiClient(`/api/palaces/${palaceId}/`, {
+          method: 'PUT',
+          body: payload,
+        });
+      } else {
+        serverResponse = await apiClient('/api/palaces/', {
+          method: 'POST',
+          body: payload,
+        });
+      }
+
+      if (serverResponse) {
+        updatePalaceInCache(serverResponse);
+        setTempPalaceMatrix(serverResponse.palace_matrix);
+
+        router.navigate(`/palace/${serverResponse.id}`);
+      }
+    } catch (error) {
+      console.error('SAVE ERROR:', error);
+      Alert.alert('Error', 'Nie udało się zapisać.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <GestureHandlerRootView
       style={style.body}
       {...(Platform.OS === 'web' ? { onWheel: handleWheel } : {})}
     >
-      {/* Mapa pod spodem */}
       <GestureDetector gesture={composedGestures}>
         <Animated.View style={style.container}>
           <Animated.View
@@ -400,14 +497,12 @@ export default function PalaceSetupScreen() {
         </Animated.View>
       </GestureDetector>
 
-      {/* Sidebar na wierzchu */}
       <View
         style={style.furnitureListBlock}
         onLayout={e => setListHeight(e.nativeEvent.layout.height - 40)}
       >
         <Text style={style.headerListTitle}>Furniture</Text>
 
-        {/* ZMIANA: Usunięto flexDirection: 'row', dodano position: 'relative' */}
         <View style={{ flex: 1, width: '100%', position: 'relative' }}>
           <Animated.ScrollView
             ref={scrollViewRef}
@@ -417,7 +512,6 @@ export default function PalaceSetupScreen() {
             contentContainerStyle={style.furnitureListContent}
             onContentSizeChange={(w, h) => setListContentHeight(h)}
           >
-            {/* (Zawartość listy mebli bez zmian) */}
             {Object.keys(FURNITURE_MAP).map(key => {
               const isSelected = selectedFurniture === key;
               return (
@@ -448,7 +542,6 @@ export default function PalaceSetupScreen() {
             })}
           </Animated.ScrollView>
 
-          {/* Tor paska przewijania - jest teraz pozycjonowany absolutnie "nad" listą */}
           <View style={style.customScrollTrack}>
             <GestureDetector gesture={panScrollGesture}>
               <Animated.View
@@ -461,14 +554,15 @@ export default function PalaceSetupScreen() {
       </View>
 
       <Pressable
-        onPress={() => {
-          setTempPalaceMatrix(matrix);
-          const route = getTempPalaceRoute();
-          router.navigate(route ?? '/backrooms');
-        }}
+        onPress={handleSave}
+        disabled={isSaving}
         style={style.reviewButton}
       >
-        <Text style={style.reviewButtonText}>Save</Text>
+        {isSaving ? (
+          <ActivityIndicator color="#FFF" size="small" />
+        ) : (
+          <Text style={style.reviewButtonText}>Save</Text>
+        )}
       </Pressable>
 
       <Vignette isOpened={isFurnitureOpen}>

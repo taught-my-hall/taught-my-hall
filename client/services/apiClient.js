@@ -28,6 +28,8 @@ export const apiClient = async (
       config.body = JSON.stringify(body);
     }
 
+    console.log(config);
+
     const response = await fetch(`${API_URL}${endpoint}`, config);
 
     if (!response.ok) {
@@ -40,6 +42,10 @@ export const apiClient = async (
         throw new Error('Session expired. Please login again.');
       }
       throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    if (response.status === 204) {
+      return null;
     }
 
     // Return the parsed JSON

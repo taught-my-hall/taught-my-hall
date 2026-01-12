@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, // 1. Imported ActivityIndicator
+  ActivityIndicator,
   Animated,
   Pressable,
   StyleSheet,
@@ -9,11 +9,17 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import useImage from 'use-image';
+// UWAGA: Wywaliłem useImage, bo tu go nie potrzebujemy
+// BackroomLines to teraz SVG i sam sobie ogarnie assety
 
 import { apiClient } from '../../services/apiClient';
-import BackroomSegment from '../components/BackroomLines';
-import { setPalacesData, setTempPalaceMatrix } from '../utils/tempData';
+// Upewnij się, że importujesz poprawną nazwę (u Ciebie był z tym problem)
+import BackroomLines from '../components/BackroomLines';
+import {
+  setPalacesData,
+  setTempPalaceId,
+  setTempPalaceMatrix,
+} from '../utils/tempData';
 import { textures } from '../utils/textures';
 
 export default function BackroomScreen() {
@@ -21,7 +27,6 @@ export default function BackroomScreen() {
   const { width, height } = useWindowDimensions();
   const svgWidth = width * 3;
 
-  // 2. Initialize loading to true so we don't show the empty state prematurely
   const [isLoading, setIsLoading] = useState(true);
   const [palaces, setPalaces] = useState([]);
   const [pointer, setPointer] = useState(0);
@@ -36,12 +41,12 @@ export default function BackroomScreen() {
       });
       if (data) {
         setPalaces(data);
+        // console.log(data); // Debug off
         setPalacesData(data);
       }
     } catch (err) {
       console.error(err);
     } finally {
-      // 3. Mark loading as finished regardless of success or failure
       setIsLoading(false);
     }
   }, []);
@@ -50,26 +55,12 @@ export default function BackroomScreen() {
     fetchPalaceList();
   }, [fetchPalaceList]);
 
-  const [imgWall1] = useImage(textures.wall1);
-  const [imgWall2] = useImage(textures.wall2);
-  const [imgFloor] = useImage(textures.wall4);
-  const [imgWood] = useImage(textures.wood3);
-
-  const imageMap = useMemo(
-    () => ({
-      wall1: imgWall1,
-      floor: imgFloor,
-      wall2: imgWall2,
-      wood1: imgWood,
-    }),
-    [imgWall1, imgWall2, imgFloor, imgWood]
-  );
-
+  // Używamy surowych importów z textures
   const textureConfig = {
-    floor: imageMap.floor,
-    wall: imageMap.wall1,
-    ceil: imageMap.wall2,
-    door: imageMap.wood1,
+    floor: textures.wall4,
+    wall: textures.wall1,
+    ceil: textures.wall2,
+    door: textures.wood3,
   };
 
   const emptyStateTextures = {
@@ -83,7 +74,7 @@ export default function BackroomScreen() {
     Animated.timing(offset, {
       toValue: width * -direction,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false, // SVG i Layout lepiej działają bez native drivera tutaj
     }).start(() => {
       setPointer(prev =>
         direction < 0
@@ -108,11 +99,10 @@ export default function BackroomScreen() {
 
   const openNewPalace = () => {
     setTempPalaceMatrix(null);
+    setTempPalaceId(null);
     router.navigate('/palace/create');
   };
 
-  // 4. Show Loading Spinner while fetching
-  // This prevents the "Create first room" door from flashing briefly
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -140,13 +130,14 @@ export default function BackroomScreen() {
               style={{ position: 'absolute', top: 0, left: 0, width, height }}
               pointerEvents="box-none"
             >
-              <BackroomSegment
+              <BackroomLines
                 i={0}
                 p={0}
                 total={1}
                 title="Create first room!"
                 svgWidth={svgWidth}
                 images={emptyStateTextures}
+                palaceId="empty-state" // Fake ID dla pustego stanu
                 onPress={openNewPalace}
               />
             </View>
@@ -156,9 +147,14 @@ export default function BackroomScreen() {
 
               const currentPalace = palaces[p];
 
+              // FIX NA BŁĄD "Duplicate key":
+              // Klucz musi być unikalny dla pozycji w renderze (i) oraz danych (id).
+              // Dodanie 'view-i' gwarantuje, że React wie, który to slot.
+              const uniqueKey = `palace-${currentPalace.id}-view-${i}`;
+
               return (
                 <View
-                  key={`palace-wrapper-${currentPalace.id || p}`}
+                  key={uniqueKey}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -168,14 +164,16 @@ export default function BackroomScreen() {
                   }}
                   pointerEvents="box-none"
                 >
-                  <BackroomSegment
-                    i={i - 1}
-                    p={p}
+                  <BackroomLines
+                    i={i - 1} // Pozycja wizualna (-1, 0, 1)
+                    p={p} // Index w tablicy
                     total={palaces.length}
                     title={currentPalace.name}
                     svgWidth={svgWidth}
                     images={textureConfig}
+                    palaceId={currentPalace.id} // <--- TO JEST KLUCZOWE DLA TEKSTUR
                     onPress={() => {
+                      setTempPalaceId(currentPalace.id);
                       router.navigate(`/palace/${currentPalace.id}`);
                     }}
                   />

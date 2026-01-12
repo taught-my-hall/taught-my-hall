@@ -9,12 +9,13 @@ export const getTempPalaceMatrix = () => {
   return res ? JSON.parse(res) : null;
 };
 
-export const setTempPalaceRoute = route => {
-  localStorage.setItem('tempPalaceRoute', route);
+export const setTempPalaceId = route => {
+  localStorage.setItem('tempPalaceId', route);
 };
 
-export const getTempPalaceRoute = () => {
-  return localStorage.getItem('tempPalaceRoute');
+export const getTempPalaceId = () => {
+  const res = localStorage.getItem('tempPalaceId');
+  return res ? JSON.parse(res) : null;
 };
 
 export const setPalacesData = data => {
@@ -23,4 +24,10 @@ export const setPalacesData = data => {
 
 export const getPalacesData = () => {
   return palacesData;
+};
+
+export const updatePalaceInCache = updatedPalace => {
+  if (!updatedPalace || !updatedPalace.id) return;
+
+  palacesData[updatedPalace.id] = updatedPalace;
 };
