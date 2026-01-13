@@ -70,7 +70,8 @@ export default function PalaceSetupScreen() {
 
     // Pobieramy dane pałacu, żeby dostać listę furniture
     const allPalaces = getPalacesData();
-    const currentPalace = allPalaces.find(
+    // TODO: allPalaces=null if user refreshes app inside palace instead of going through /backrooms
+    const currentPalace = allPalaces?.find(
       p => String(p.id) === String(palaceId)
     );
 
@@ -567,11 +568,7 @@ export default function PalaceSetupScreen() {
       </Pressable>
 
       <Vignette isOpened={isFurnitureOpen}>
-        {/* Zabezpieczenie: renderuj tylko jeśli selectedFurniture istnieje */}
         {selectedFurniture && (
-          // W Setupie masz tylko nazwę mebla (klucz), nie masz ID z bazy danych
-          // Jeśli FurnitureScreen wymaga ID, to tutaj będzie problem,
-          // ale żeby nie wywalało błędu, przekaż stringa lub null.
           <FurnitureScreen furnitureId={selectedFurniture} />
         )}
       </Vignette>
