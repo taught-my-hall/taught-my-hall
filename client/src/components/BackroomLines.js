@@ -2,9 +2,10 @@ import PropTypes from 'prop-types';
 import {
   Platform,
   Pressable,
-  StyleSheet,
-  View,
+  Image as RNImage,
+  StyleSheet, // Potrzebne do wyciągnięcia URI z require()
   useWindowDimensions,
+  View,
 } from 'react-native';
 import {
   Circle,
@@ -18,7 +19,6 @@ import {
   Text as SvgText,
 } from 'react-native-svg';
 
-// --- Layout Constants (Ratios) ---
 const FLOOR_HEIGHT_RATIO = 0.7;
 const CEIL_HEIGHT_RATIO = 0.15;
 const LEFT_CORNER = 0.25;
@@ -26,7 +26,6 @@ const RIGHT_CORNER = 0.75;
 const DOOR_WIDTH_RATIO = 0.2;
 const DOOR_HEIGHT_RATIO = 0.4;
 
-// Fallback colors (visible if textures fail or are loading)
 const FLOOR_COLOR = '#403524';
 const WALL_COLOR = '#5c4e36';
 const CEIL_COLOR = '#2a2a2a';
@@ -39,16 +38,17 @@ export default function BackroomLines({
   title,
   onPress,
   svgWidth,
-  images, // Received from BackroomScreen
+  images,
+  palaceId, // Odbieramy stałe ID pałacu
 }) {
   const { width, height } = useWindowDimensions();
 
   const isFirst = p === 0;
   const isLast = p === total - 1;
 
-  // --- Dynamic Calculations ---
   const doorW = width * DOOR_WIDTH_RATIO;
   const doorH = height * DOOR_HEIGHT_RATIO;
+  // i służy TYLKO do obliczania pozycji X/Y
   const doorX = width * (i + 0.5 - DOOR_WIDTH_RATIO / 2);
   const doorY = height * (FLOOR_HEIGHT_RATIO - DOOR_HEIGHT_RATIO);
 
@@ -63,27 +63,34 @@ export default function BackroomLines({
     }
   };
 
-  // Helper: Get strict URL string from image object or string
-  const getImgHref = img => {
-    if (!img) return null;
-    // If it's a DOM node (from use-image on web), get .src
-    if (typeof img === 'object' && img.src) return img.src;
-    // If it's already a string URL or require() number
-    return img;
+  // Funkcja naprawiająca problem "białych tekstur"
+  // require('./img.png') zwraca liczbę. SVG potrzebuje "file://..." lub "http://..."
+  const resolveAsset = source => {
+    if (!source) return null;
+    if (typeof source === 'string') return source; // Już jest URL
+    try {
+      const asset = RNImage.resolveAssetSource(source);
+      return asset ? asset.uri : null;
+    } catch (e) {
+      return null;
+    }
   };
 
-  const floorSrc = getImgHref(images?.floor);
-  const wallSrc = getImgHref(images?.wall);
-  const ceilSrc = getImgHref(images?.ceil);
-  const doorSrc = getImgHref(images?.door);
+  const floorSrc = resolveAsset(images?.floor);
+  const wallSrc = resolveAsset(images?.wall);
+  const ceilSrc = resolveAsset(images?.ceil);
+  const doorSrc = resolveAsset(images?.door);
 
-  // Generate Unique IDs using index 'i' to prevent collisions
-  const floorId = `floorPat-${i}`;
-  const wallId = `wallPat-${i}`;
-  const ceilId = `ceilPat-${i}`;
-  const doorId = `doorPat-${i}`;
+  // --- FIX ---
+  // ID wzorów zależy TERAZ TYLKO od ID pałacu.
+  // Nawet jak zmienisz 'i' (przesuniesz ekran), ID wzoru ("palace-123-floor") pozostanie takie samo.
+  // Dzięki temu SVG nie przeładowuje tekstury przy animacji -> brak mrugania/znikania.
+  const uniquePrefix = `palace-${palaceId}`;
+  const floorId = `${uniquePrefix}-floor`;
+  const wallId = `${uniquePrefix}-wall`;
+  const ceilId = `${uniquePrefix}-ceil`;
+  const doorId = `${uniquePrefix}-door`;
 
-  // Use Pattern URL if source exists, else fallback color
   const floorFill = floorSrc ? `url(#${floorId})` : FLOOR_COLOR;
   const wallFill = wallSrc ? `url(#${wallId})` : WALL_COLOR;
   const ceilFill = ceilSrc ? `url(#${ceilId})` : CEIL_COLOR;
@@ -101,7 +108,6 @@ export default function BackroomLines({
         style={styles.svg}
       >
         <Defs>
-          {/* Floor Pattern */}
           {floorSrc && (
             <Pattern
               id={floorId}
@@ -119,7 +125,6 @@ export default function BackroomLines({
               />
             </Pattern>
           )}
-          {/* Wall Pattern */}
           {wallSrc && (
             <Pattern
               id={wallId}
@@ -137,7 +142,6 @@ export default function BackroomLines({
               />
             </Pattern>
           )}
-          {/* Ceiling Pattern */}
           {ceilSrc && (
             <Pattern
               id={ceilId}
@@ -155,7 +159,6 @@ export default function BackroomLines({
               />
             </Pattern>
           )}
-          {/* Door Pattern */}
           {doorSrc && (
             <Pattern
               id={doorId}
@@ -177,7 +180,6 @@ export default function BackroomLines({
 
         {isFirst ? (
           <>
-            {/* Ceiling */}
             <Polygon
               points={`
                 ${width * i},0 
@@ -187,7 +189,6 @@ export default function BackroomLines({
               `}
               fill={ceilFill}
             />
-            {/* Left Wall */}
             <Polygon
               points={`
                 ${width * i},0 
@@ -197,7 +198,6 @@ export default function BackroomLines({
               `}
               fill={wallFill}
             />
-            {/* Floor */}
             <Polygon
               points={`${width * (i + LEFT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
@@ -205,7 +205,6 @@ export default function BackroomLines({
               ${width * i},${height}`}
               fill={floorFill}
             />
-            {/* Wireframes */}
             <Line
               x1={width * (i + LEFT_CORNER)}
               y1={height * FLOOR_HEIGHT_RATIO}
@@ -249,8 +248,6 @@ export default function BackroomLines({
           </>
         ) : (
           <>
-            {/* Middle Segment */}
-            {/* Ceiling */}
             <Polygon
               points={`
                 ${width * i},0 
@@ -260,7 +257,6 @@ export default function BackroomLines({
               `}
               fill={ceilFill}
             />
-            {/* Floor */}
             <Polygon
               points={`${width * i},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 0.51)},${height * FLOOR_HEIGHT_RATIO} 
@@ -268,7 +264,6 @@ export default function BackroomLines({
               ${width * i},${height}`}
               fill={floorFill}
             />
-            {/* Wireframes */}
             <Line
               x1={width * i}
               y1={height * FLOOR_HEIGHT_RATIO}
@@ -290,7 +285,6 @@ export default function BackroomLines({
 
         {isLast ? (
           <>
-            {/* Ceiling */}
             <Polygon
               points={`
                 ${width * (i + 0.5)},0 
@@ -300,7 +294,6 @@ export default function BackroomLines({
               `}
               fill={ceilFill}
             />
-            {/* Right Wall */}
             <Polygon
               points={`
                 ${width * (i + 1)},0 
@@ -310,7 +303,6 @@ export default function BackroomLines({
               `}
               fill={wallFill}
             />
-            {/* Floor */}
             <Polygon
               points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + RIGHT_CORNER)},${height * FLOOR_HEIGHT_RATIO} 
@@ -318,7 +310,6 @@ export default function BackroomLines({
               ${width * (i + 0.5)},${height}`}
               fill={floorFill}
             />
-            {/* Wireframes */}
             <Line
               x1={width * (i + 0.5)}
               y1={height * FLOOR_HEIGHT_RATIO}
@@ -362,8 +353,6 @@ export default function BackroomLines({
           </>
         ) : (
           <>
-            {/* Middle Segment Right Half */}
-            {/* Ceiling */}
             <Polygon
               points={`
                 ${width * (i + 0.5)},0 
@@ -373,7 +362,6 @@ export default function BackroomLines({
               `}
               fill={ceilFill}
             />
-            {/* Floor */}
             <Polygon
               points={`${width * (i + 0.5)},${height * FLOOR_HEIGHT_RATIO} 
               ${width * (i + 1)},${height * FLOOR_HEIGHT_RATIO} 
@@ -381,7 +369,6 @@ export default function BackroomLines({
               ${width * (i + 0.5)},${height}`}
               fill={floorFill}
             />
-            {/* Wireframes */}
             <Line
               x1={width * (i + 0.5)}
               y1={height * FLOOR_HEIGHT_RATIO}
@@ -479,6 +466,8 @@ BackroomLines.propTypes = {
     ceil: PropTypes.any,
     door: PropTypes.any,
   }),
+  palaceId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    .isRequired,
 };
 
 const styles = StyleSheet.create({

@@ -51,7 +51,7 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             multiline
           />
           <Pressable style={styles.actionButton} onPress={handleSave}>
-            Save
+            <Text>Show</Text>
           </Pressable>
         </View>
       ) : (
@@ -79,11 +79,11 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
 
           <View style={styles.actionButtons}>
             <Pressable style={styles.actionButton} onPress={onToggle}>
-              {hidden ? 'Show' : 'Hide'}
+              <Text>{hidden ? 'Show' : 'Hide'}</Text>
             </Pressable>
 
             <Pressable style={styles.actionButton} onPress={handleStartEdit}>
-              Edit
+              <Text>Edit</Text>
             </Pressable>
           </View>
         </>
