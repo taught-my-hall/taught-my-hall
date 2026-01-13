@@ -460,46 +460,6 @@ function PalaceScreen() {
     ]
   );
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scale.value },
-      ],
-    };
-  });
-
-  const fetchPalace = useCallback(async () => {
-    try {
-      const apiData = await apiClient(`/api/palaces/${id}`, { method: 'GET' });
-
-      if (apiData) {
-        setCurrentPalace(apiData);
-      }
-    } catch (err) {
-      console.error('Failed to load palace:', err);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    const cachedPalaces = getPalacesData();
-    if (Array.isArray(cachedPalaces)) {
-      const found = cachedPalaces[id];
-      if (found) {
-        setCurrentPalace(found);
-      } else {
-        fetchPalace();
-      }
-    } else {
-      fetchPalace();
-    }
-  }, [id, fetchPalace]);
-
-  if (!currentPalace) {
-    return null;
-  }
-
   const handleDelete = useCallback(async () => {
     if (!currentPalace) return;
 
@@ -547,6 +507,46 @@ function PalaceScreen() {
     }
   }, [currentPalace, router]);
 
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    };
+  });
+
+  const fetchPalace = useCallback(async () => {
+    try {
+      const apiData = await apiClient(`/api/palaces/${id}`, { method: 'GET' });
+
+      if (apiData) {
+        setCurrentPalace(apiData);
+      }
+    } catch (err) {
+      console.error('Failed to load palace:', err);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const cachedPalaces = getPalacesData();
+    if (Array.isArray(cachedPalaces)) {
+      const found = cachedPalaces[id];
+      if (found) {
+        setCurrentPalace(found);
+      } else {
+        fetchPalace();
+      }
+    } else {
+      fetchPalace();
+    }
+  }, [id, fetchPalace]);
+
+  if (!currentPalace) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView
       style={style.body}
@@ -588,7 +588,6 @@ function PalaceScreen() {
               router.navigate('/palace/create?edit=true');
             },
           ],
-          ,
           ['Delete', handleDelete],
           [
             'Back',
