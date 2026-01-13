@@ -73,7 +73,7 @@ class UserPalaceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # return only palaces that belong to the logged-in user
         user = self.request.user
-        return UserPalace.objects.filter(user=user)
+        return UserPalace.objects.filter(user=user).order_by("created_at", "id")
 
     def perform_create(self, serializer):
         # always set user to request.user
