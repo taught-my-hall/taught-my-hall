@@ -69,7 +69,8 @@ export default function PalaceSetupScreen() {
 
     // Pobieramy dane pałacu, żeby dostać listę furniture
     const allPalaces = getPalacesData();
-    const currentPalace = allPalaces.find(
+    // TODO: allPalaces=null if user refreshes app inside palace instead of going through /backrooms
+    const currentPalace = allPalaces?.find(
       p => String(p.id) === String(palaceId)
     );
 
@@ -566,7 +567,7 @@ export default function PalaceSetupScreen() {
       </Pressable>
 
       <Vignette isOpened={isFurnitureOpen}>
-        <FurnitureScreen furnitureId={selectedFurniture.id} />
+        <FurnitureScreen furnitureId={selectedFurniture?.id} />
       </Vignette>
     </GestureHandlerRootView>
   );
