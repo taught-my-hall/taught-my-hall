@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { apiClient } from '../../services/apiClient';
 import { iconsGui } from '../utils/textures';
-import EmptyFlashcardTile from './EmptyFlashcardTile';
 import FlashcardTile from './FlashcardTile';
 
 const FurnitureScreen = ({ furnitureId }) => {
@@ -79,6 +78,15 @@ const FurnitureScreen = ({ furnitureId }) => {
     return revealedFlashcardIndexes.includes(index);
   };
 
+  const handleSetFlashcard = fc => {
+    const existingFlashcard = flashcards.find(f => f.id === fc.id);
+    if (existingFlashcard) {
+      setFlashcards(prev => prev.map(f => (f.id === fc.id ? fc : f)));
+    } else {
+      setFlashcards(prev => [...prev, fc]);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.main}>
@@ -116,22 +124,21 @@ const FurnitureScreen = ({ furnitureId }) => {
           </View>
         )}
 
-        {!isLoading && !error && flashcards.length > 0 && (
+        {!isLoading && !error && (
           <View style={styles.gridContainer}>
             {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => {
               const flashcard = getFlashcardWithIndex(index);
-              if (flashcard) {
-                return (
-                  <FlashcardTile
-                    key={index}
-                    flashcard={flashcard}
-                    hidden={!isFlashcardRevealed(index)}
-                    onToggle={() => handleToggleFlashcard(index)}
-                  />
-                );
-              } else {
-                return <EmptyFlashcardTile key={index} />;
-              }
+              return (
+                <FlashcardTile
+                  key={index}
+                  flashcard={flashcard}
+                  hidden={!isFlashcardRevealed(index)}
+                  onToggle={() => handleToggleFlashcard(index)}
+                  slotIndex={index}
+                  furnitureId={furnitureId}
+                  setFlashcard={handleSetFlashcard}
+                />
+              );
             })}
           </View>
         )}

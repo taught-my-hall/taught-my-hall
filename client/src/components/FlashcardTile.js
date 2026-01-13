@@ -12,31 +12,43 @@ import {
 import { apiClient } from '../../services/apiClient';
 import { iconsFishcards } from '../utils/textures';
 
-export default function FlashcardTile({ flashcard, onToggle, hidden }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [front, setFront] = useState(flashcard.front);
-  const [back, setBack] = useState(flashcard.back);
+export default function FlashcardTile({
+  flashcard,
+  setFlashcard,
+  onToggle,
+  hidden,
+  slotIndex,
+  furnitureId,
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [front, setFront] = useState('');
+  const [back, setBack] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [renderedFlashcard, setRenderedFlashcard] = useState(flashcard);
 
   const handleSave = async () => {
     setIsLoading(true);
 
     try {
-      const res = await apiClient(`/api/flashcards/${flashcard.id}`, {
-        method: 'PUT',
-        body: {
-          front,
-          back,
-          furniture_slot_index: flashcard.furniture_slot_index,
-        },
-      });
-      setFront(res.front);
-      setBack(res.back);
-      setRenderedFlashcard(res);
-      setIsEditing(false);
+      let res;
+      if (flashcard) {
+        res = await apiClient(`/api/flashcards/${flashcard.id}`, {
+          method: 'PUT',
+          body: {
+            front,
+            back,
+            furniture_slot_index: flashcard.furniture_slot_index,
+          },
+        });
+      } else {
+        res = await apiClient(`/api/furniture/${furnitureId}/flashcards/`, {
+          method: 'POST',
+          body: { front, back, furniture_slot_index: slotIndex },
+        });
+      }
+      setFlashcard(res);
+      setShowForm(false);
     } catch {
-      // Assume there won't be any errors (no time)
+      // Assume there won't be any errors (time pressure)
       console.error(
         'Something went wrong when updating flashcard, please try again'
       );
@@ -45,14 +57,42 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
     }
   };
 
+  const handleStartCreate = () => {
+    if (flashcard) {
+      console.error('Should not call handleStartCreate() if flashcard exists');
+      return;
+    }
+    setShowForm(true);
+    setFront('');
+    setBack('');
+  };
+
+  const handleStartEdit = () => {
+    if (!flashcard) {
+      console.error(
+        'Should not call handleStartEdit() if flashcard does not exist'
+      );
+      return;
+    }
+    setShowForm(true);
+    setFront(flashcard.front);
+    setBack(flashcard.back);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setFront(flashcard?.front || '');
+    setBack(flashcard?.back || '');
+  };
+
   // TODO: flashcards should have their own icons saved in the database
   const iconSource = { uri: iconsFishcards.user };
 
-  return (
-    <View style={styles.tile}>
-      {isEditing ? (
+  // Same form for creating and updating flashcard
+  if (showForm) {
+    return (
+      <View style={styles.tile}>
         <View style={styles.editForm}>
-          <TextInput />
           <TextInput
             style={styles.input}
             value={front}
@@ -60,6 +100,7 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             placeholder="Question"
             placeholderTextColor="#666"
             multiline
+            numberOfLines={3}
           />
           <TextInput
             style={styles.input}
@@ -68,70 +109,81 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             placeholder="Answer"
             placeholderTextColor="#666"
             multiline
+            numberOfLines={3}
           />
 
           <View style={styles.actionButtons}>
-            <Pressable
-              style={styles.actionButton}
-              onPress={() => setIsEditing(false)}
-            >
+            <Pressable style={styles.actionButton} onPress={handleCancel}>
               <Text style={styles.actionButtonText}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.actionButton} onPress={handleSave}>
-              <Text style={styles.actionButtonText}>Save</Text>
+              <Text style={styles.actionButtonText}>
+                {flashcard ? 'Update' : 'Create'}
+              </Text>
               {isLoading && <ActivityIndicator color="white" size={12} />}
             </Pressable>
           </View>
         </View>
-      ) : (
-        <>
-          <View style={styles.content}>
-            <Text style={styles.label}>Question:</Text>
-            <Text style={styles.questionText}>{renderedFlashcard.front}</Text>
+      </View>
+    );
+  }
 
-            <View style={styles.separator} />
+  if (!flashcard)
+    return (
+      <Pressable style={styles.tile} onPress={handleStartCreate}>
+        <Text style={styles.middleText}>
+          No flashcard. Click here to create one
+        </Text>
+      </Pressable>
+    );
 
-            <View
-              style={[
-                styles.answerSection,
-                hidden ? styles.hiddenContent : styles.revealedContent,
-              ]}
-            >
-              <Text style={styles.label}>Answer:</Text>
-              <Text style={styles.answerText}>{renderedFlashcard.back}</Text>
-            </View>
+  return (
+    <View style={styles.tile}>
+      <View style={styles.content}>
+        <Text style={styles.label}>Question:</Text>
+        <Text style={styles.questionText}>{flashcard.front}</Text>
 
-            <Image
-              source={iconSource}
-              style={styles.watermark}
-              resizeMode="contain"
-            />
-          </View>
+        <View style={styles.separator} />
 
-          <View style={styles.actionButtons}>
-            <Pressable style={styles.actionButton} onPress={onToggle}>
-              <Text style={styles.actionButtonText}>
-                {hidden ? 'Show' : 'Hide'}
-              </Text>
-            </Pressable>
+        <View
+          style={[
+            styles.answerSection,
+            hidden ? styles.hiddenContent : styles.revealedContent,
+          ]}
+        >
+          <Text style={styles.label}>Answer:</Text>
+          <Text style={styles.answerText}>{flashcard.back}</Text>
+        </View>
 
-            <Pressable
-              style={styles.actionButton}
-              onPress={() => setIsEditing(true)}
-            >
-              <Text style={styles.actionButtonText}>Edit</Text>
-            </Pressable>
-          </View>
-        </>
-      )}
+        <Image
+          source={iconSource}
+          style={styles.watermark}
+          resizeMode="contain"
+        />
+      </View>
+
+      <View style={styles.actionButtons}>
+        <Pressable style={styles.actionButton} onPress={onToggle}>
+          <Text style={styles.actionButtonText}>
+            {hidden ? 'Show' : 'Hide'}
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.actionButton} onPress={handleStartEdit}>
+          <Text style={styles.actionButtonText}>Edit</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 FlashcardTile.propTypes = {
   flashcard: PropTypes.object,
+  setFlashcard: PropTypes.func,
   onToggle: PropTypes.func,
   hidden: PropTypes.bool,
+  slotIndex: PropTypes.number,
+  furnitureId: PropTypes.number,
 };
 
 const styles = StyleSheet.create({
@@ -142,6 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     border: '2px solid rgba(255, 255, 255, 0.2)',
     padding: 12,
+    justifyContent: 'center',
   },
   hiddenIcon: {
     width: 80,
@@ -224,5 +277,10 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 4,
     resizeMode: 'none',
+  },
+
+  middleText: {
+    textAlign: 'center',
+    color: 'white',
   },
 });
