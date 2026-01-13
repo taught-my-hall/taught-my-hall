@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
+  Alert,
   Platform,
   Pressable,
   StyleSheet,
@@ -23,7 +24,11 @@ import AppMenu from '../../../components/AppMenu';
 import FurnitureScreen from '../../../components/FurnitureScreen';
 import PalaceTile from '../../../components/palaceTile';
 import Vignette from '../../../components/Vignette';
-import { getPalacesData, setTempPalaceMatrix } from '../../../utils/tempData';
+import {
+  getPalacesData,
+  setPalacesData,
+  setTempPalaceMatrix,
+} from '../../../utils/tempData';
 import { textures } from '../../../utils/textures';
 
 const TILE_SIZE = 100;
@@ -43,8 +48,8 @@ function PalaceScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-
-  const [currentPalace, setCurrentPalace] = useState(null);
+  console.log(id);
+  const [currentPalace, setCurrentPalace] = useState(getPalacesData()[id]);
   const [activeFurniture, setActiveFurniture] = useState(null);
 
   const scale = useSharedValue(1);
@@ -455,6 +460,53 @@ function PalaceScreen() {
     ]
   );
 
+  const handleDelete = useCallback(async () => {
+    if (!currentPalace) return;
+
+    const performDelete = async () => {
+      try {
+        await apiClient(`/api/palaces/${currentPalace.id}/`, {
+          method: 'DELETE',
+        });
+
+        const cachedData = getPalacesData();
+        if (cachedData) {
+          const newCache = { ...cachedData };
+          delete newCache[currentPalace.id];
+          setPalacesData(newCache);
+        }
+
+        router.navigate('/backrooms');
+      } catch (err) {
+        console.error('Delete failed:', err);
+        Alert.alert('Error', 'Failed to delete palace.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (
+        window.confirm(
+          `Are you sure you want to delete "${currentPalace.name}"?`
+        )
+      ) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Delete Palace',
+        `Are you sure you want to delete "${currentPalace.name}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: performDelete,
+          },
+        ]
+      );
+    }
+  }, [currentPalace, router]);
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -536,6 +588,7 @@ function PalaceScreen() {
               router.navigate('/palace/create?edit=true');
             },
           ],
+          ['Delete', handleDelete],
           [
             'Back',
             () => {
