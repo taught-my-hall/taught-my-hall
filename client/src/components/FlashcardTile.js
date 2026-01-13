@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Pressable,
   StyleSheet,
@@ -8,22 +9,40 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { apiClient } from '../../services/apiClient';
 import { iconsFishcards } from '../utils/textures';
 
 export default function FlashcardTile({ flashcard, onToggle, hidden }) {
   const [isEditing, setIsEditing] = useState(false);
   const [front, setFront] = useState(flashcard.front);
   const [back, setBack] = useState(flashcard.back);
+  const [isLoading, setIsLoading] = useState(false);
+  const [renderedFlashcard, setRenderedFlashcard] = useState(flashcard);
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
-  };
+  const handleSave = async () => {
+    setIsLoading(true);
 
-  const handleSave = () => {
-    // TODO: send request to the backend when backend is ready
-    console.log(front);
-    console.log(back);
-    setIsEditing(false);
+    try {
+      const res = await apiClient(`/api/flashcards/${flashcard.id}`, {
+        method: 'PUT',
+        body: {
+          front,
+          back,
+          furniture_slot_index: flashcard.furniture_slot_index,
+        },
+      });
+      setFront(res.front);
+      setBack(res.back);
+      setRenderedFlashcard(res);
+      setIsEditing(false);
+    } catch {
+      // Assume there won't be any errors (no time)
+      console.error(
+        'Something went wrong when updating flashcard, please try again'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // TODO: flashcards should have their own icons saved in the database
@@ -50,25 +69,37 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
             placeholderTextColor="#666"
             multiline
           />
-          <Pressable style={styles.actionButton} onPress={handleSave}>
-            <Text>Show</Text>
-          </Pressable>
+
+          <View style={styles.actionButtons}>
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => setIsEditing(false)}
+            >
+              <Text style={styles.actionButtonText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.actionButton} onPress={handleSave}>
+              <Text style={styles.actionButtonText}>Save</Text>
+              {isLoading && <ActivityIndicator color="white" size={12} />}
+            </Pressable>
+          </View>
         </View>
       ) : (
         <>
-          <View
-            style={[
-              styles.content,
-              hidden ? styles.hiddenContent : styles.revealedContent,
-            ]}
-          >
+          <View style={styles.content}>
             <Text style={styles.label}>Question:</Text>
-            <Text style={styles.questionText}>{flashcard.front}</Text>
+            <Text style={styles.questionText}>{renderedFlashcard.front}</Text>
 
             <View style={styles.separator} />
 
-            <Text style={styles.label}>Answer:</Text>
-            <Text style={styles.answerText}>{flashcard.back}</Text>
+            <View
+              style={[
+                styles.answerSection,
+                hidden ? styles.hiddenContent : styles.revealedContent,
+              ]}
+            >
+              <Text style={styles.label}>Answer:</Text>
+              <Text style={styles.answerText}>{renderedFlashcard.back}</Text>
+            </View>
 
             <Image
               source={iconSource}
@@ -79,11 +110,16 @@ export default function FlashcardTile({ flashcard, onToggle, hidden }) {
 
           <View style={styles.actionButtons}>
             <Pressable style={styles.actionButton} onPress={onToggle}>
-              <Text>{hidden ? 'Show' : 'Hide'}</Text>
+              <Text style={styles.actionButtonText}>
+                {hidden ? 'Show' : 'Hide'}
+              </Text>
             </Pressable>
 
-            <Pressable style={styles.actionButton} onPress={handleStartEdit}>
-              <Text>Edit</Text>
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => setIsEditing(true)}
+            >
+              <Text style={styles.actionButtonText}>Edit</Text>
             </Pressable>
           </View>
         </>
@@ -121,6 +157,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     transition: 'opacity 0.3s ease-in-out',
   },
+  answerSection: {
+    transition: 'opacity 0.3s ease-in-out',
+  },
   label: {
     color: '#aaa',
     fontSize: 10,
@@ -156,17 +195,24 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     gap: 8,
+    marginTop: 'auto',
   },
   actionButton: {
-    color: 'white',
     padding: 4,
-    textAlign: 'center',
     backgroundColor: 'black',
     borderRadius: 4,
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  actionButtonText: {
+    color: 'white',
   },
 
   editForm: {
+    flex: 1,
     gap: 8,
   },
 

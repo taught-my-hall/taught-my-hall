@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -7,93 +8,42 @@ import {
   Text,
   View,
 } from 'react-native';
-import EmptyFlashcardTile from '../components/EmptyFlashcardTile';
-import FlashcardTile from '../components/FlashcardTile';
+import { apiClient } from '../../services/apiClient';
 import { iconsGui } from '../utils/textures';
+import EmptyFlashcardTile from './EmptyFlashcardTile';
+import FlashcardTile from './FlashcardTile';
 
-export default function FurnitureScreen() {
+const FurnitureScreen = ({ furnitureId }) => {
   const [flashcards, setFlashcards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [revealedFlashcardIndexes, setRevealedFlashcardIndexes] = useState([]);
 
-  // TODO: real flashcards fetch when backend implements it
-  const refetchFlashcards = useCallback(async () => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const data = [
-      {
-        id: 2,
-        front: 'Which bacteria is primarily used in soybean inoculants?',
-        back: 'Bradyrhizobium japonicum.',
-        interval: 1,
-        ease_factor: 2.5,
-        repetition: 0,
-        next_review: new Date('2025-12-12T15:14:51.987000Z'),
-        created_at: new Date('2025-12-12T15:14:51.989000Z'),
-        updated_at: new Date('2025-12-12T15:14:51.989000Z'),
-        furniture_slot_index: 0,
-      },
-      {
-        id: 3,
-        front: 'What is the main purpose of soybean inoculation?',
-        back: 'To enhance nitrogen fixation and improve plant growth.',
-        interval: 1,
-        ease_factor: 2.5,
-        repetition: 0,
-        next_review: new Date('2025-12-12T15:14:51.991000Z'),
-        created_at: new Date('2025-12-12T15:14:51.992000Z'),
-        updated_at: new Date('2025-12-12T15:14:51.992000Z'),
-        furniture_slot_index: 1,
-      },
-      {
-        id: 4,
-        front:
-          'Do soybeans naturally contain nitrogen-fixing bacteria in all soils?',
-        back: 'No, many soils lack effective Bradyrhizobium strains.',
-        interval: 1,
-        ease_factor: 2.5,
-        repetition: 0,
-        next_review: new Date('2025-12-12T15:14:51.994000Z'),
-        created_at: new Date('2025-12-12T15:14:51.996000Z'),
-        updated_at: new Date('2025-12-12T15:14:51.996000Z'),
-        furniture_slot_index: 6,
-      },
-      {
-        id: 5,
-        front: 'When should soybeans be inoculated?',
-        back: 'Shortly before sowing.',
-        interval: 1,
-        ease_factor: 2.5,
-        repetition: 0,
-        next_review: new Date('2025-12-12T15:14:52.129000Z'),
-        created_at: new Date('2025-12-12T15:14:52.130000Z'),
-        updated_at: new Date('2025-12-12T15:14:52.130000Z'),
-        furniture_slot_index: 3,
-      },
-      {
-        id: 6,
-        front:
-          'What environmental factor negatively affects inoculant bacteria?',
-        back: 'High temperatures and direct sunlight.',
-        interval: 1,
-        ease_factor: 2.5,
-        repetition: 0,
-        next_review: new Date('2025-12-12T15:14:52.133000Z'),
-        created_at: new Date('2025-12-12T15:14:52.134000Z'),
-        updated_at: new Date('2025-12-12T15:14:52.134000Z'),
-        furniture_slot_index: 8,
-      },
-    ];
-
-    setFlashcards(data);
-    setIsLoading(false);
+  const refetchFurnitureFlashcards = useCallback(async id => {
+    setIsLoading(true);
     setError('');
+
+    try {
+      // Very bad to filter on the client but there was a time rush for the demo
+      const flashcardsList = await apiClient(`/api/flashcards/`, {
+        method: 'GET',
+      });
+
+      const filtered = flashcardsList.filter(f => f.furniture === id);
+
+      setFlashcards(filtered);
+      setIsLoading(false);
+      setError('');
+    } catch {
+      setError('Something went wrong, please try again');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    refetchFlashcards();
-  }, [refetchFlashcards]);
+    refetchFurnitureFlashcards(furnitureId);
+  }, [refetchFurnitureFlashcards, furnitureId]);
 
   const getFlashcardWithIndex = index => {
     return flashcards.find(f => f.furniture_slot_index === index);
@@ -157,7 +107,10 @@ export default function FurnitureScreen() {
         {!!error && (
           <View style={styles.centerBox}>
             <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={refetchFlashcards}>
+            <Pressable
+              style={styles.retryBtn}
+              onPress={() => refetchFurnitureFlashcards(furnitureId)}
+            >
               <Text style={styles.retryText}>Try again</Text>
             </Pressable>
           </View>
@@ -185,7 +138,13 @@ export default function FurnitureScreen() {
       </View>
     </View>
   );
-}
+};
+
+FurnitureScreen.propTypes = {
+  furnitureId: PropTypes.string.isRequired,
+};
+
+export default FurnitureScreen;
 
 const styles = StyleSheet.create({
   container: {
