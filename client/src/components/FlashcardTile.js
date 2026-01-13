@@ -15,6 +15,7 @@ import { iconsFishcards } from '../utils/textures';
 export default function FlashcardTile({
   flashcard,
   setFlashcard,
+  deleteFlashcard,
   onToggle,
   hidden,
   slotIndex,
@@ -83,6 +84,28 @@ export default function FlashcardTile({
     setShowForm(false);
     setFront(flashcard?.front || '');
     setBack(flashcard?.back || '');
+  };
+
+  const handleDelete = async () => {
+    if (!flashcard) {
+      console.error('Cannot delete: flashcard does not exist');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiClient(`/api/flashcards/${flashcard.id}/`, {
+        method: 'DELETE',
+      });
+      deleteFlashcard(slotIndex);
+    } catch (err) {
+      console.error(
+        'Something went wrong when deleting flashcard, please try again',
+        err
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // TODO: flashcards should have their own icons saved in the database
@@ -172,6 +195,11 @@ export default function FlashcardTile({
         <Pressable style={styles.actionButton} onPress={handleStartEdit}>
           <Text style={styles.actionButtonText}>Edit</Text>
         </Pressable>
+
+        <Pressable style={styles.actionButton} onPress={handleDelete}>
+          <Text style={styles.actionButtonText}>Delete</Text>
+          {isLoading && <ActivityIndicator color="white" size={12} />}
+        </Pressable>
       </View>
     </View>
   );
@@ -180,6 +208,7 @@ export default function FlashcardTile({
 FlashcardTile.propTypes = {
   flashcard: PropTypes.object,
   setFlashcard: PropTypes.func,
+  deleteFlashcard: PropTypes.func,
   onToggle: PropTypes.func,
   hidden: PropTypes.bool,
   slotIndex: PropTypes.number,

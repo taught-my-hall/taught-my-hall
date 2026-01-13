@@ -78,6 +78,12 @@ const FurnitureScreen = ({ furnitureId }) => {
     return revealedFlashcardIndexes.includes(index);
   };
 
+  const handleDeleteFlashcard = slotIndex => {
+    setFlashcards(prev =>
+      prev.filter(f => f.furniture_slot_index !== slotIndex)
+    );
+  };
+
   const handleSetFlashcard = fc => {
     const existingFlashcard = flashcards.find(f => f.id === fc.id);
     if (existingFlashcard) {
@@ -137,6 +143,7 @@ const FurnitureScreen = ({ furnitureId }) => {
                   slotIndex={index}
                   furnitureId={furnitureId}
                   setFlashcard={handleSetFlashcard}
+                  deleteFlashcard={handleDeleteFlashcard}
                 />
               );
             })}
