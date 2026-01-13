@@ -1,4 +1,4 @@
-import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layer, Stage } from 'react-konva';
 import {
@@ -47,7 +47,6 @@ function PalaceScreen() {
   const [currentPalace, setCurrentPalace] = useState(null);
   const [activeFurniture, setActiveFurniture] = useState(null);
 
-  const pathname = usePathname();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -546,7 +545,7 @@ function PalaceScreen() {
         ]}
       />
       <Vignette isOpened={isFurnitureOpen}>
-        <FurnitureScreen data={activeFurniture} />
+        <FurnitureScreen furnitureId={activeFurniture?.id} />
       </Vignette>
     </GestureHandlerRootView>
   );
