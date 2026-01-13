@@ -19,7 +19,14 @@ import {
   useWindowDimensions, // 1. Import hook
   View,
 } from 'react-native';
-import { getTempPalaceMatrix, setTempPalaceMatrix } from '../../utils/tempData';
+import { TextInput } from 'react-native-gesture-handler';
+import {
+  getTempPalaceId,
+  getTempPalaceMatrix,
+  getTempPalaceName,
+  setTempPalaceMatrix,
+  setTempPalaceName,
+} from '../../utils/tempData';
 
 const CELL_SIZE = 40;
 const GAP_SIZE = 2;
@@ -135,6 +142,8 @@ export default function PalaceCreatorScreen() {
 
   const initialCamX = (window.width - initialWidth) / 2;
   const initialCamY = (window.height - initialHeight) / 2;
+
+  const [inputName, setInputName] = useState(getTempPalaceName());
 
   const pan = useRef(
     new Animated.ValueXY({ x: initialCamX, y: initialCamY })
@@ -498,11 +507,29 @@ export default function PalaceCreatorScreen() {
     return matrix;
   };
 
+  const isEdit = getTempPalaceId();
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Infinite Grid</Text>
+        {isEdit ? (
+          <Text
+            style={styles.headerTitle}
+          >{`Edit palace ${isEdit} (${inputName})`}</Text>
+        ) : (
+          <TextInput
+            style={[
+              styles.input,
+              { width: 300, textAlign: 'center', color: '#6f6f6f' },
+            ]}
+            value={inputName}
+            placeholder={'Enter your new palace name!'}
+            onChangeText={text => {
+              setInputName(text);
+            }}
+          />
+        )}
       </View>
 
       {notification && (
@@ -558,6 +585,14 @@ export default function PalaceCreatorScreen() {
       <Pressable
         onPress={() => {
           if (Object.keys(selectedCells).length > 0) {
+            if (isEdit === null) {
+              if (inputName === '') {
+                showNotification('You must name your new palace first');
+                return;
+              } else {
+                setTempPalaceName(inputName);
+              }
+            }
             setTempPalaceMatrix(getGridMatrix());
             router.navigate('/palace/setup');
           }
@@ -610,6 +645,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 14,
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: '500',
+    height: 40,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    marginBottom: 16,
   },
   // ---------------------------
   viewport: {

@@ -39,6 +39,7 @@ import {
   getPalacesData,
   getTempPalaceId,
   getTempPalaceMatrix,
+  getTempPalaceName,
   setTempPalaceMatrix,
   updatePalaceInCache,
 } from '../../utils/tempData';
@@ -425,7 +426,7 @@ export default function PalaceSetupScreen() {
 
     try {
       const palaceId = getTempPalaceId();
-      const hardcodedName = 'New Palace';
+      const name = getTempPalaceName();
 
       const apiMatrix = matrix.map(row =>
         row.map(cell => {
@@ -439,7 +440,7 @@ export default function PalaceSetupScreen() {
       );
 
       const payload = {
-        name: hardcodedName,
+        name: name,
         palace_matrix: apiMatrix,
       };
 
@@ -567,7 +568,9 @@ export default function PalaceSetupScreen() {
       </Pressable>
 
       <Vignette isOpened={isFurnitureOpen}>
-        <FurnitureScreen furnitureId={selectedFurniture?.id} />
+        {selectedFurniture && (
+          <FurnitureScreen furnitureId={selectedFurniture} />
+        )}
       </Vignette>
     </GestureHandlerRootView>
   );

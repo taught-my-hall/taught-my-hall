@@ -19,6 +19,7 @@ import {
   setPalacesData,
   setTempPalaceId,
   setTempPalaceMatrix,
+  setTempPalaceName,
 } from '../utils/tempData';
 import { textures } from '../utils/textures';
 
@@ -41,7 +42,7 @@ export default function BackroomScreen() {
       });
       if (data) {
         setPalaces(data);
-        // console.log(data); // Debug off
+        console.log(data); // Debug off
         setPalacesData(data);
       }
     } catch (err) {
@@ -100,6 +101,7 @@ export default function BackroomScreen() {
   const openNewPalace = () => {
     setTempPalaceMatrix(null);
     setTempPalaceId(null);
+    setTempPalaceName('');
     router.navigate('/palace/create');
   };
 
@@ -174,6 +176,8 @@ export default function BackroomScreen() {
                     palaceId={currentPalace.id} // <--- TO JEST KLUCZOWE DLA TEKSTUR
                     onPress={() => {
                       setTempPalaceId(currentPalace.id);
+                      setTempPalaceName(currentPalace.name);
+                      console.log(currentPalace);
                       router.navigate(`/palace/${currentPalace.id}`);
                     }}
                   />
