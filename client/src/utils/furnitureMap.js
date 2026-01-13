@@ -14,7 +14,6 @@ export const FURNITURE_MAP = {
   childBedBlue: { x: 0, y: 319, w: 48, h: 34 },
   childBedRed: { x: 48, y: 319, w: 48, h: 34 },
 
-
   chairFront: { x: 96, y: 0, w: 16, h: 33 },
   chairRight: { x: 112, y: 0, w: 16, h: 33 },
   chairBack: { x: 128, y: 0, w: 16, h: 33 },
@@ -60,7 +59,6 @@ export const FURNITURE_MAP = {
   chair2GreenBack: { x: 128, y: 225, w: 16, h: 30 },
   chair2GreenLeft: { x: 144, y: 225, w: 16, h: 31 },
 
-
   sofaBrownFront: { x: 96, y: 289, w: 47, h: 32 },
   sofaBrownRight: { x: 144, y: 288, w: 24, h: 48 },
   sofaBrownBack: { x: 175, y: 294, w: 49, h: 27 },
@@ -101,53 +99,51 @@ export const FURNITURE_MAP = {
   sofaRedBack: { x: 208, y: 423, w: 47, h: 25 },
   sofaRedLeft: { x: 264, y: 416, w: 23, h: 48 },
 
-  
-  shelfBrownEmptyFront: { x: 0, y: 560, w:48, h: 44 },
-  shelfBrownFullFront: { x: 48, y: 560, w:48, h: 44 },
-  shelfBrownBack: { x: 114, y: 560, w:48, h: 44 },
-  shelfBrownLeft: { x: 195, y: 562, w:13, h: 74 },
-  shelfBrownRight: { x: 195, y: 562, w:13, h: 74 },
+  shelfBrownEmptyFront: { x: 0, y: 560, w: 48, h: 44 },
+  shelfBrownFullFront: { x: 48, y: 560, w: 48, h: 44 },
+  shelfBrownBack: { x: 114, y: 560, w: 48, h: 44 },
+  shelfBrownLeft: { x: 195, y: 562, w: 13, h: 74 },
+  shelfBrownRight: { x: 195, y: 562, w: 13, h: 74 },
 
-  shelfLightEmptyFront: { x: 0, y: 608, w:48, h: 44 },
-  shelfLightFullFront: { x: 48, y: 608, w:48, h: 44 },
-  shelfLightBack: { x: 114, y: 608, w:48, h: 44 },
-  shelfLightLeft: { x: 227, y: 562, w:13, h: 74 },
-  shelfLightRight: { x: 227, y: 562, w:13, h: 74 },
+  shelfLightEmptyFront: { x: 0, y: 608, w: 48, h: 44 },
+  shelfLightFullFront: { x: 48, y: 608, w: 48, h: 44 },
+  shelfLightBack: { x: 114, y: 608, w: 48, h: 44 },
+  shelfLightLeft: { x: 227, y: 562, w: 13, h: 74 },
+  shelfLightRight: { x: 227, y: 562, w: 13, h: 74 },
 
-  shelfBrownSmallEmptyFront: { x: 0, y: 655, w:47, h: 32 },
-  shelfBrownSmallFullFront: { x: 47, y: 655, w:47, h: 32 },
+  shelfBrownSmallEmptyFront: { x: 0, y: 655, w: 47, h: 32 },
+  shelfBrownSmallFullFront: { x: 47, y: 655, w: 47, h: 32 },
 
-  shelfLightSmallEmptyFront: { x: 96, y: 655, w:47, h: 32 },
-  shelfLightSmallFullFront: { x: 144, y: 655, w:47, h: 32 },
+  shelfLightSmallEmptyFront: { x: 96, y: 655, w: 47, h: 32 },
+  shelfLightSmallFullFront: { x: 144, y: 655, w: 47, h: 32 },
 
-  cabinetBrownFront: { x: 256, y: 560, w:32, h: 32 },
-  cabinetBrownBack: { x: 288, y: 560, w:32, h: 32 },
+  cabinetBrownFront: { x: 256, y: 560, w: 32, h: 32 },
+  cabinetBrownBack: { x: 288, y: 560, w: 32, h: 32 },
 
-  cabinetLightFront: { x: 256, y: 592, w:32, h: 32 },
-  cabinetLightBack: { x: 288, y: 592, w:32, h: 32 },
+  cabinetLightFront: { x: 256, y: 592, w: 32, h: 32 },
+  cabinetLightBack: { x: 288, y: 592, w: 32, h: 32 },
 
-  chestBrownFront: { x: 352, y: 569, w:32, h: 23 },
-  chestBrownBack: { x: 384, y: 569, w:32, h: 23 },
-  chestBrownRight:  { x: 420, y: 569, w:12, h: 39 },
-  chestBrownLeft:  { x: 432, y: 569, w:12, h: 39 },
+  chestBrownFront: { x: 352, y: 569, w: 32, h: 23 },
+  chestBrownBack: { x: 384, y: 569, w: 32, h: 23 },
+  chestBrownRight: { x: 420, y: 569, w: 12, h: 39 },
+  chestBrownLeft: { x: 432, y: 569, w: 12, h: 39 },
 
-  chestLightRight: { x: 452, y: 569, w:12, h: 39 },
-  chestLightLeft: { x: 464, y: 569, w:12, h: 39 },
-  chestLightFront: { x: 352, y: 601, w:12, h: 39 },
-  chestLightBack: { x: 384, y: 601, w:12, h: 39 },
+  chestLightRight: { x: 452, y: 569, w: 12, h: 39 },
+  chestLightLeft: { x: 464, y: 569, w: 12, h: 39 },
+  chestLightFront: { x: 352, y: 601, w: 12, h: 39 },
+  chestLightBack: { x: 384, y: 601, w: 12, h: 39 },
 
-  tableBrown: { x: 256, y: 9, w:48, h: 39 },
-  tableLight: { x: 208, y: 0, w:48, h: 48 },
+  tableBrown: { x: 256, y: 9, w: 48, h: 39 },
+  tableLight: { x: 208, y: 0, w: 48, h: 48 },
 
-  wardrobeBrown: { x: 336, y: 105, w:20, h: 39 },
-  wardrobeLight: { x: 304, y: 105, w:20, h: 39 },
+  wardrobeBrown: { x: 336, y: 105, w: 20, h: 39 },
+  wardrobeLight: { x: 304, y: 105, w: 20, h: 39 },
 
-  piano: { x: 352, y: 264, w:32, h: 40 },
-  tv: { x: 401, y: 208, w:30, h: 32 },
-  standingLamp: { x: 449, y: 273, w:14, h: 41 },
-  standingLamp2: { x: 465, y: 273, w:14, h: 41 },
-  clock: { x: 432, y: 272, w:16, h: 48 },
-  easel: { x: 496, y: 223, w:16, h: 33 },
-  garbage: { x: 481, y: 204, w:15, h: 20 },
- 
+  piano: { x: 352, y: 264, w: 32, h: 40 },
+  tv: { x: 401, y: 208, w: 30, h: 32 },
+  standingLamp: { x: 449, y: 273, w: 14, h: 41 },
+  standingLamp2: { x: 465, y: 273, w: 14, h: 41 },
+  clock: { x: 432, y: 272, w: 16, h: 48 },
+  easel: { x: 496, y: 223, w: 16, h: 33 },
+  garbage: { x: 481, y: 204, w: 15, h: 20 },
 };
