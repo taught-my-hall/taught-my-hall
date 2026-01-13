@@ -31,3 +31,12 @@ export const updatePalaceInCache = updatedPalace => {
 
   palacesData[updatedPalace.id] = updatedPalace;
 };
+
+export const setTempPalaceName = name => {
+  localStorage.setItem('tempPalaceName', name);
+};
+
+export const getTempPalaceName = () => {
+  const res = localStorage.getItem('tempPalaceName');
+  return res;
+};
