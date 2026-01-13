@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 import {
   Platform,
   Pressable,
@@ -39,7 +40,7 @@ export default function BackroomLines({
   onPress,
   svgWidth,
   images,
-  palaceId, // Odbieramy stałe ID pałacu
+  palaceId,
 }) {
   const { width, height } = useWindowDimensions();
 
@@ -81,11 +82,8 @@ export default function BackroomLines({
   const ceilSrc = resolveAsset(images?.ceil);
   const doorSrc = resolveAsset(images?.door);
 
-  // --- FIX ---
-  // ID wzorów zależy TERAZ TYLKO od ID pałacu.
-  // Nawet jak zmienisz 'i' (przesuniesz ekran), ID wzoru ("palace-123-floor") pozostanie takie samo.
-  // Dzięki temu SVG nie przeładowuje tekstury przy animacji -> brak mrugania/znikania.
-  const uniquePrefix = `palace-${palaceId}`;
+  const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  const uniquePrefix = `palace-${palaceId}-${instanceId}`;
   const floorId = `${uniquePrefix}-floor`;
   const wallId = `${uniquePrefix}-wall`;
   const ceilId = `${uniquePrefix}-ceil`;
