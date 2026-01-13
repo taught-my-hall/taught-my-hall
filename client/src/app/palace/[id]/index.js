@@ -533,7 +533,7 @@ function PalaceScreen() {
             'Edit',
             () => {
               setTempPalaceMatrix(currentPalace.palace_matrix);
-              router.navigate('/palace/create');
+              router.navigate('/palace/create?edit=true');
             },
           ],
           [

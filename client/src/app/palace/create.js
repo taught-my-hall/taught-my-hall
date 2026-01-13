@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
 import PropTypes from 'prop-types';
 import React, {
   useCallback,
@@ -113,6 +113,7 @@ export default function PalaceCreatorScreen() {
   const [activeRoomId, setActiveRoomId] = useState('0');
   const activeRoomIdRef = useRef('0');
 
+  const params = useGlobalSearchParams();
   const [selectedCells, setSelectedCells] = useState({});
   const selectedCellsRef = useRef({});
   const furnitureRef = useRef({});
@@ -563,7 +564,9 @@ export default function PalaceCreatorScreen() {
         }}
         style={styles.reviewButton}
       >
-        <Text style={{ fontSize: 24, color: '#FFF' }}>New Palace</Text>
+        <Text style={{ fontSize: 24, color: '#FFF' }}>
+          {params.edit === 'true' ? 'Update palace' : 'New Palace'}
+        </Text>
       </Pressable>
     </View>
   );
